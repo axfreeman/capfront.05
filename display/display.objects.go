@@ -5,150 +5,390 @@ package display
 
 import (
 	"capfront/api"
+	"capfront/auth"
 	"capfront/models"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+// helper function for most display handlers
+// retrieves a user cookie using Get_current_user and extracts the login status
+// for convenience, returns the username, whether the user is logged in, and any error
+// sets 'LastVisitedPage' so we can return here after an action
+func userStatus(ctx *gin.Context) (string, bool, error) {
+	var loginStatus bool = false
+
+	// find out what the browser knows
+
+	username, err := auth.Get_current_user(ctx)
+	if err != nil {
+		log.Printf("The client browser knows nothing about user %s", username)
+		return "unknown", false, err
+	} else {
+
+		// find out what the server knows
+
+		synched_user := models.UserServerData{}
+		body, err := auth.ProtectedResourceServerRequest(username, "Synchronise with server", `users/`+username)
+		if err != nil {
+			log.Printf("The server knows nothing about user %s", username)
+			return username, false, err
+		}
+
+		err = json.Unmarshal(body, &synched_user)
+
+		// the server knows something
+
+		if err != nil {
+			log.Printf("The server failed to inform us about user %s", username)
+			ctx.Redirect(http.StatusFound, "/login")
+			// TODO tell the user why she is being asked to log in again
+			// TODO provide option to register
+			return username, false, err
+		} else
+
+		// We agree with the server that this user can log in.
+		// Now synch with the server in case something changed
+
+		{
+
+			if models.Users[username].CurrentSimulation != synched_user.CurrentSimulation {
+				log.Printf("We are out of synch. Server thinks our simulation is %d and client says it is %d",
+					synched_user.CurrentSimulation,
+					models.Users[username].CurrentSimulation)
+				api.Refresh(ctx, username)
+			}
+
+			models.Users[username].LastVisitedPage = ctx.Request.URL.Path
+			models.Users[username].CurrentSimulation = synched_user.CurrentSimulation
+			loginStatus = models.Users[username].LoggedIn
+			return username, loginStatus, err
+		}
+	}
+}
+
+// helper function to obtain the state of the current simulation
+// if no user is logged in, return null state
+func get_current_state(username string) string {
+	this_user := models.Users[username]
+	if this_user == nil {
+		return "NO SIMULATION YET"
+	}
+	this_simulation_id := this_user.CurrentSimulation
+	for i := 0; i < len(this_user.SimulationList); i++ {
+		s := this_user.SimulationList[i]
+		if s.Id == this_simulation_id {
+			return s.State
+		}
+	}
+	return "UNKNOWN"
+}
+
+// helper function to set the state of the current simulation
+// if we fail it's a programme error so we don't test for that
+func set_current_state(username string, new_state string) {
+	this_user := models.Users[username]
+	this_simulation_id := this_user.CurrentSimulation
+	log.Output(1, fmt.Sprintf("resetting state to %s for user %s", new_state, this_user.UserName))
+	for i := 0; i < len(this_user.SimulationList); i++ {
+		s := &this_user.SimulationList[i]
+		if (*s).Id == this_simulation_id {
+			(*s).State = new_state
+			return
+		}
+		log.Output(1, fmt.Sprintf("simulation with id %d not found", this_simulation_id))
+	}
+}
+
 // display all commodities in the current simulation
-func ShowCommodities(c *gin.Context) {
-	c.HTML(http.StatusOK, "commodities.html", gin.H{
-		"Title":       "Commodities",
-		"commodities": models.CommodityList,
+// use the cookie, which comes in the response, to identify the user
+func ShowCommodities(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+	state := get_current_state(username)
+
+	ctx.HTML(http.StatusOK, "commodities.html", gin.H{
+		"Title":          "Commodities",
+		"commodities":    models.Users[username].CommodityList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }
 
 // display all industries in the current simulation
-func ShowIndustries(c *gin.Context) {
-	c.HTML(http.StatusOK, "industries.html", gin.H{
-		"Title":      "Industries",
-		"industries": models.IndustryList,
+func ShowIndustries(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	ctx.HTML(http.StatusOK, "industries.html", gin.H{
+		"Title":          "Industries",
+		"industries":     models.Users[username].IndustryList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }
 
 // display all classes in the current simulation
-func ShowClasses(c *gin.Context) {
-	c.HTML(http.StatusOK, "classes.html", gin.H{
-		"Title":   "Classes",
-		"classes": models.ClassList,
+func ShowClasses(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+	state := get_current_state(username)
+	ctx.HTML(http.StatusOK, "classes.html", gin.H{
+		"Title":          "Classes",
+		"classes":        models.Users[username].ClassList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }
 
 // display all stocks in the current simulation
-func ShowStocks(c *gin.Context) {
-	c.HTML(http.StatusOK, "stocks.html", gin.H{
-		"Title":  "Stocks",
-		"stocks": models.StockList,
+func ShowStocks(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	ctx.HTML(http.StatusOK, "stocks.html", gin.H{
+		"Title":          "Stocks",
+		"stocks":         models.Users[username].StockList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }
 
 // Display one specific commodity
-func ShowCommodity(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id")) //TODO check user didn't do something stupid
+func ShowCommodity(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	id, _ := strconv.Atoi(ctx.Param("id"))
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.CommodityList); i++ {
-		if id == models.CommodityList[i].Id {
-			c.HTML(http.StatusOK, "commodity.html", gin.H{
-				"Title":     "Commodity",
-				"commodity": models.CommodityList[i],
+	for i := 0; i < len(models.Users[username].CommodityList); i++ {
+		if id == models.Users[username].CommodityList[i].Id {
+			ctx.HTML(http.StatusOK, "commodity.html", gin.H{
+				"Title":          "Commodity",
+				"commodity":      models.Users[username].CommodityList[i],
+				"username":       username,
+				"loggedinstatus": loginStatus,
+				"state":          state,
 			})
 		}
 	}
 }
 
 // Display one specific industry
-func ShowIndustry(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id")) //TODO check user didn't do something stupid
+func ShowIndustry(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.IndustryList); i++ {
-		if id == models.IndustryList[i].Id {
-			c.HTML(http.StatusOK, "industry.html", gin.H{
-				"Title":    "Industry",
-				"industry": models.IndustryList[i],
+	for i := 0; i < len(models.Users[username].IndustryList); i++ {
+		if id == models.Users[username].IndustryList[i].Id {
+			ctx.HTML(http.StatusOK, "industry.html", gin.H{
+				"Title":          "Industry",
+				"industry":       models.Users[username].IndustryList[i],
+				"username":       username,
+				"loggedinstatus": loginStatus,
+				"state":          state,
 			})
 		}
 	}
 }
 
 // Display one specific class
-func ShowClass(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id")) //TODO check user didn't do something stupid
+func ShowClass(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.ClassList); i++ {
-		if id == models.ClassList[i].Id {
-			c.HTML(http.StatusOK, "class.html", gin.H{
-				"Title": "Class",
-				"class": models.ClassList[i],
+	for i := 0; i < len(models.Users[username].ClassList); i++ {
+		if id == models.Users[username].ClassList[i].Id {
+			ctx.HTML(http.StatusOK, "class.html", gin.H{
+				"Title":          "Class",
+				"class":          models.Users[username].ClassList[i],
+				"username":       username,
+				"loggedinstatus": loginStatus,
+				"state":          state,
 			})
 		}
 	}
 }
 
 // Display one specific stock
-func ShowStock(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id")) //TODO check user didn't do something stupid
+func ShowStock(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+
+	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.StockList); i++ {
-		if id == models.StockList[i].Id {
-			c.HTML(http.StatusOK, "stock.html", gin.H{
-				"Title": "Stock",
-				"stock": models.StockList[i],
+	for i := 0; i < len(models.Users[username].StockList); i++ {
+		if id == models.Users[username].StockList[i].Id {
+			ctx.HTML(http.StatusOK, "stock.html", gin.H{
+				"Title":          "Stock",
+				"stock":          models.Users[username].StockList[i],
+				"username":       username,
+				"loggedinstatus": loginStatus,
+				"state":          state,
 			})
 		}
 	}
 }
 
-// services request to refresh all data from the server
-// TODO this is probably not necessary; included for now for legacy and test purposes
-func RefreshHandler(c *gin.Context) {
-	api.Refresh()
-	ShowIndexPage(c)
-}
-
-// Displays messages, and the economy
-func ShowIndexPage(c *gin.Context) {
-	// TODO implement display options
-	var displayOptions = []string{
-		`Values`,
-		`Prices`,
-		`Quantities`,
+// Displays snapshot of the economy
+// TODO parameterise the templates to reduce boilerplate
+func ShowIndexPage(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
 	}
+	state := get_current_state(username)
+
 	api.UserMessage = `This is the home page`
-	c.HTML(http.StatusOK, "index.html", gin.H{
+	ctx.HTML(http.StatusOK, "index.html", gin.H{
 		"Title":          "Economy",
-		"industries":     models.IndustryList,
-		"commodities":    models.CommodityList,
-		"Message":        api.UserMessage,
-		"DisplayOptions": displayOptions,
-		"classes":        models.ClassList,
+		"industries":     models.Users[username].IndustryList,
+		"commodities":    models.Users[username].CommodityList,
+		"Message":        models.Users[username].UserMessage.Message,
+		"DisplayOptions": models.Quantity,
+		"classes":        models.Users[username].ClassList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }
 
 // Fetch the trace from the local database
-func ShowTrace(c *gin.Context) {
-	c.HTML(
+func ShowTrace(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	state := get_current_state(username)
+	ctx.HTML(
 		http.StatusOK,
 		"trace.html",
 		gin.H{
-			"Title": "Simulation Trace",
-			"trace": models.TraceList,
+			"Title":          "Simulation Trace",
+			"trace":          models.Users[username].TraceList,
+			"username":       username,
+			"loggedinstatus": loginStatus,
+			"state":          state,
 		},
 	)
 }
 
-// TODO the simulations should be confined to those belonging to the logged in user; the templates should be everything on offer
-// retrieve all simulations from the local database and display them in the user dashboard
-func UserDashboard(c *gin.Context) {
+// Retrieve all templates, and all simulations belonging to this user, from the local database
+// Display them in the user dashboard
+func UserDashboard(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
 
-	api.FetchAPI(&api.ApiList[1]) //TODO this should be a map, indexed by the name of what we want. As a botch, we have put it in this location in
-	// TODO deal with failure to return anything which is a programming error - this simulation should always be present, but
-	// TODO (1) API provider could fuck up
-	// TODO (2) connection might be broken
-	c.HTML(http.StatusOK, "user-dashboard.html", gin.H{
-		"Title":       "Dashboard",
-		"simulations": models.MySimulations,
-		"templates":   models.SimulationList,
+	state := get_current_state(username)
+	ctx.HTML(http.StatusOK, "user-dashboard.html", gin.H{
+		"Title":          "Dashboard",
+		"simulations":    models.Users[username].SimulationList,
+		"templates":      models.TemplateList,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
+	})
+}
+
+// a diagnostic endpoint to display the data in the system
+func DataHandler(ctx *gin.Context) {
+	// username, loginStatus, _ := userStatus(ctx)
+	// b, err := json.Marshal(models.Users)
+	// if err != nil {
+	// 	fmt.Println("Could not marshal the Users object")
+	// 	return
+	// }
+	ctx.JSON(http.StatusOK, models.Users)
+}
+
+func SwitchSimulation(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	log.Output(1, fmt.Sprintf("User %s wants to switch to simulation %d", username, id))
+	ctx.HTML(http.StatusOK, "notready.html", gin.H{
+		"Title": "Not Ready",
+	})
+}
+
+func DeleteSimulation(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	log.Output(1, fmt.Sprintf("User %s wants to delete simulation %d", username, id))
+	auth.ProtectedResourceServerRequest(username, "Delete simulation", "simulations/delete/"+ctx.Param("id"))
+	api.Refresh(ctx, username)
+	UserDashboard(ctx)
+}
+
+func RestartSimulation(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusFound, "/register")
+		return
+	}
+
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	log.Output(1, fmt.Sprintf("User %s wants to restart simulation %d", username, id))
+	ctx.HTML(http.StatusOK, "notready.html", gin.H{
+		"Title": "Not Ready",
 	})
 }

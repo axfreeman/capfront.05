@@ -1,4 +1,4 @@
-<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+<div class="w3-section w3-card-4 w3-serif" style="width:fit-content; margin:auto">
   <header class="w3-container w3-blue">
     <h3 class="w3-center"> Industries </h3>
   </header>
@@ -6,14 +6,12 @@
   <table id="industries" class="table table-striped w-auto">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Name</th>
-        <th>Simulation</th>
         <th>Output</th>
         <th style="text-align:center">Output<br>Scale</th>
-        <th style="text-align:center">Output<br>Growth<br>Rate</th>
+        <th style="text-align:center">Growth<br>Rate</th>
         <th style="text-align:center">Initial<br>Capital</th>
-        <th style="text-align:center">Work<br>In<br>Progress</th>
+        <th style="text-align:center">Work In<br>Progress</th>
         <th style="text-align:center">Current<br>Capital </th>
         <th style="text-align:center">Profit</th>
         <th style="text-align:center">Profit<br>Rate </th>
@@ -24,10 +22,8 @@
       {{range .industries }}
 
       <tr>
-        <td>{{ .Id }}</td>
         <td><a href="/industry/{{.Id}}">{{ .Name }}</a></td>
-        <td style="text-align:center">{{ .Simulation}}</td>
-        <td style="text-align:right">{{ .Output }}</td>
+        <td style="text-align:right"> <a href="/commodity/{{ .OutputCommodity.Id}}">{{ .Output }}</a>  </td>
         <td style="text-align:right">{{ .Output_Scale }}</td>
         <td style="text-align:right">{{ .Output_Growth_Rate }}</td>
         <td style="text-align:right">{{ .Initial_Capital }} </td>

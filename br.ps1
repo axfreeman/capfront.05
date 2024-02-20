@@ -1,4 +1,4 @@
-$file = "./capitalism-frontend.exe"
+$file = "./capsim.exe"
 &go build -o $file
 if ($LASTEXITCODE -eq 0) {
     &$file

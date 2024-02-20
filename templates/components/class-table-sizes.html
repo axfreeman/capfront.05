@@ -1,12 +1,11 @@
-<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+<div class="w3-section w3-card-4 w3-serif" style=" margin:auto">
   <header class="w3-container w3-blue">
-    <h3 class="w3-center"> Social Classes </h3>
+    <h4 class="w3-center"> Class:use values </h4>
   </header>
 
-  <table class="table table-striped w-auto">
+  <table class="table table-striped w-auto" id="class-sizes">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Name</th>
         <th style="text-align:center">Consumption<br>Goods</th>
         <th style="text-align:center">For<br>Sale</th>
@@ -18,9 +17,8 @@
       {{range .classes }}
 
       <tr>
-        <td>{{ .Id }}</td>
-        <td><a href="/class/{{.Id}}">{{ .Name }}</a></td>
-        <td style="text-align:right">{{ .ConsumerGood.Size }}</td>
+        <td style="text-align:left"><a href="/class/{{.Id}}">{{ .Name }}</a></td>
+        <td style="text-align:center">{{ .ConsumerGood.Size }}</td>
         <td style="text-align:right">{{ .SalesStock.Size }}</td>
         <td style="text-align:right">{{ .MoneyStock.Size }}</td>
       </tr>
@@ -29,3 +27,17 @@
   </table>
 </div>
 
+<script>
+
+  new DataTable('#class-sizes', {
+    info: false,
+    paging: false,
+    filter: false,
+    columns: [
+      null,
+      { orderable: false },
+      { orderable: false },
+      { orderable: false },
+    ]
+  });
+</script>

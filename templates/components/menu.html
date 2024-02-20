@@ -1,56 +1,55 @@
 <!--menu.html-->
 <div class="container">
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="btn btn-outline-success" href="/">Home</a>
-      <a class="btn btn-outline-success" href="/trace">Trace</a>
-      <a class="btn btn-outline-success" href="/login">Login</a>
-      <a class="btn btn-outline-success" href="/user/dashboard">Dashboard</a>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">
-              Tables
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="/commodities">Commodities</a></li>
-              <li><a class="dropdown-item" href="/industries">Industries</a></li>
-              <li><a class="dropdown-item" href="/classes">Classes</a></li>
-              <li><a class="dropdown-item" href="/stocks">Stocks</a></li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-            </ul>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">
-              Admin
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="/action/reset">Restart Simulation</a></li>
-              <li><a class="dropdown-item" href="/refresh">Refresh from remote server</a></li>
-            </ul>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">
-              Actions
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="/action/demand">Evaluate Demand</a></li>
-              <li><a class="dropdown-item" href="/action/supply">Evaluate Supply</a></li>
-              <li><a class="dropdown-item" href="/action/trade">Trade</a></li>
-              <li><a class="dropdown-item" href="/action/produce">Produce</a></li>
-            </ul>
-          </li>
-        </ul>
-        <form class="d-flex">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
-        </form>
-      </div>
+  <nav class="w3-top" >
+    <div class="w3-bar w3-light-grey" style="width:75%; margin:auto">
+      {{ if .loggedinstatus}}
+      <a class="w3-bar-item w3-button w3-light-blue w3-round-large" href="/index">Home</a>
+      <a class="w3-bar-item w3-button w3-light-blue w3-round-large" href="/user/dashboard">Dashboard</a>
+      <a class="w3-bar-item w3-button w3-light-blue w3-round-large" href="/data">Data</a>
+      <a class="w3-bar-item w3-button w3-pale-blue w3-round-large" style="padding-right: 20px;" href="/commodities">Commodities</a>
+      <a class="w3-bar-item w3-button w3-pale-blue w3-round-large" href="/industries">Industries</a>
+      <a class="w3-bar-item w3-button w3-pale-blue w3-round-large" href="/classes">Classes</a>
+      <a class="w3-bar-item w3-button w3-pale-blue w3-round-large" href="/stocks">Stocks</a>
+      {{ if eq .state "DEMAND" }}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/demand">Demand</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large">Demand</a>
+      {{ end }}
+
+      {{ if eq .state "SUPPLY"}}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/supply">Supply</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large" >Supply</a>
+      {{ end }}
+
+      {{ if eq .state "TRADE"}}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/trade">Trade</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large" >Trade</a>
+      {{ end }}
+
+      {{ if eq .state "PRODUCE"}}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/produce">Produce</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large" >Produce</a>
+      {{ end }}
+
+      {{ if eq .state "CONSUME"}}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/consume">Consume</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large" >Consume</a>
+      {{ end }}
+
+      {{ if eq .state "INVEST"}}
+      <a class="w3-bar-item w3-button w3-teal w3-round-large" href="/action/invest">Invest</a>
+      {{ else }}
+      <a class="w3-bar-item w3-button w3-disabled w3-teal w3-round-large" >Invest</a>
+      {{ end }}
+
+      <label class="w3-text-blue w3-right" style="padding-right:10px;padding-left:10px;margin-top: 6px;"> {{ .username }} </label>
+      <a class="w3-bar-item w3-right w3-button w3-light-blue w3-round-large" href="/logout">Logout</a>
+
+      {{ end}}
     </div>
   </nav>
 </div>

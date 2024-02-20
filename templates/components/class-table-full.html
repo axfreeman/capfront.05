@@ -1,20 +1,22 @@
-<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+<div class="w3-section w3-card-4 w3-serif" style="width:fit-content;  margin:auto">
   <header class="w3-container w3-blue">
     <h3 class="w3-center"> Classes </h3>
   </header>
-  <table class="table table-striped w-auto">
+  <table class="table table-striped w-auto" id=classes>
     <thead>
       <tr>
-        <th>ID</th>
         <th>Name</th>
-        <th>Simulation</th>
+        <th style="text-align:center">Necessities<br>(Size)</th>
+        <th style="text-align:center">Necessities<br>(Value)</th>
+        <th style="text-align:center">Necessities<br>(Price)</th>
+        <th style="text-align:center">Supply<br>Size</th>
+        <th style="text-align:center">Supply<br>Value</th>
+        <th style="text-align:center">Supply<br>Price</th>
         <th>Population</th>
         <th style="text-align:center">Participation<br>Ratio</th>
         <th  style="text-align:center">Consumption<br>Ratio</th>
         <th>Revenue</th>
         <th>Assets</th>
-        <th style="text-align:center">Sales<br>Stock</th>
-        <th>Supply</th>
       </tr>
     </thead>
     <tbody>
@@ -22,19 +24,42 @@
       {{range .classes }}
 
       <tr>
-        <td> {{ .Id }}</td>
         <td><a href="/class/{{.Id}}">{{ .Name }}</a></td>
-        <td style="text-align:right">{{ .Simulation}}</td>
+        <td><a href="/stock/{{ .ConsumerGood.Id}}">{{ .ConsumerGood.Size }}</a></td>
+        <td>{{ .ConsumerGood.Value }}</td>
+        <td>{{ .ConsumerGood.Price }}</td>
+        <td><a href="/stock/{{ .SalesStock.Id}}">{{ .SalesStock.Size }}</a></td>
+        <td>{{ .SalesStock.Value }}</td>
+        <td>{{ .SalesStock.Price }}</td>
         <td style="text-align:right">{{ .Population }}</td>
         <td style="text-align:right">{{ .Participation_Ratio }}</td>
         <td style="text-align:right">{{ .Consumption_Ratio }}</td>
         <td style="text-align:right">{{ .Revenue }}</td>
         <td style="text-align:right">{{ .Assets }}</td>
-        <td><a href="/stock/{{ .SalesStock.Id}}">{{ .SalesStock.Name }}</a></td>
-        <td style="text-align:right">{{ .SalesStock.Size }}</td>
       </tr>
       {{end}}
     </tbody>
   </table>
   </div>
   
+  <script>
+    new DataTable('#classes', {
+      info: false,
+      paging: false,
+      filter: false,
+      columns: [
+        null,
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },
+        { orderable: false },        
+      ]
+    });
+  </script>

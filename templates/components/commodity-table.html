@@ -1,4 +1,4 @@
-<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+<div class="w3-section w3-card-4 w3-serif" style="width:fit-content; margin:auto">
   <header class="w3-container w3-blue">
     <h3 class="w3-center"> Commodities </h3>
   </header>
@@ -6,9 +6,6 @@
   <table class="table table-striped w-auto" id="commodities">
     <thead>
       <tr>
-        <th>Simulation</th>
-        <th>Time<br>Stamp</th>
-        <th>ID</th>
         <th>Name</th>
         <th style="text-align:center">Origin </th>
         <th style="text-align:center">Usage </th>
@@ -28,36 +25,29 @@
       {{range .commodities }}
 
       <tr>
-        <td style="text-align:center">{{ .Simulation}}</td style="text-align:right">
-          <td>{{ .Time_Stamp }}</td>
-          <td>{{ .Id }}</th>
-        <td><a href="/commodity/{{.Id}}">{{ .Name }}</a></td style="text-align:right">
-        <td style="text-align:center">{{ .Origin }}</td style="text-align:right">
-        <td style="text-align:center">{{ .Usage }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Size }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Total_Value }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Total_Price }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Unit_Value }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Unit_Price }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Turnover_Time }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Demand }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Supply }}</td style="text-align:right">
-        <td style="text-align:right">{{ .Allocation_Ratio }}</td style="text-align:right">
+        <td style="text-align:left"><a href="/commodity/{{.Id}}">{{ .Name }}</a></td>
+        <td style="text-align:center">{{ .Origin }}</td>
+        <td style="text-align:center">{{ .Usage }}</td>
+        <td style="text-align:right">{{ .Size }}</td>
+        <td style="text-align:right">{{ .Total_Value }}</td>
+        <td style="text-align:right">{{ .Total_Price }}</td>
+        <td style="text-align:right">{{ .Unit_Value }}</td>
+        <td style="text-align:right">{{ .Unit_Price }}</td>
+        <td style="text-align:right">{{ .Turnover_Time }}</td>
+        <td style="text-align:right">{{ .Demand }}</td>
+        <td style="text-align:right">{{ .Supply }}</td>
+        <td style="text-align:right">{{ .Allocation_Ratio }}</td>
       </tr>
       {{end}}
     </tbody>
   </table>
 </div>
 <script>
-
   new DataTable('#commodities', {
     info: false,
     paging: false,
     filter: false,
     columns: [
-      { orderable: false },
-      null,
-      null,
       null,
       null,
       null,

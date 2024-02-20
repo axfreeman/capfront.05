@@ -2,8 +2,7 @@
 <style>
   .grid-container {
     display: grid;
-    gap: 5px;
-    padding: 10px;
+    grid-template-columns: 25% 25% 40%;    
   }
 
   .grid-item {
@@ -11,40 +10,67 @@
     padding: 5px;
   }
 
-  .item1 {
+  .ind1 {
     grid-column: 1 / span 1;
     grid-row: 1;
   }
 
-  .item2 {
+  .ind2 {
     grid-column: 2;
     grid-row: 1 / span 1;
   }
 
-  .item3 {
-    grid-column: 1 / span 2;
-    grid-row: 3;
+  .ind3 {
+    grid-column: 3 / span 1;
+    grid-row: 1;
   }
-
-  .item4 {
-    grid-column: 1 / span 2;
+  .class1 {
+    grid-column: 1 / span 1;
     grid-row: 2;
   }
 
-  .item5 {
-    grid-column: 1 / span 2;
-    grid-row: 4;
+  .class2 {
+    grid-column: 2;
+    grid-row: 2 / span 1;
   }
+
+  .class3 {
+    grid-column: 3 / span 1;
+    grid-row: 2;
+  }
+
+  .commodities {
+    grid-column: 1 / span 3;
+    grid-row: 3;
+  }
+
 </style>
 
-<div class="grid-container" style="Width:75%;  margin:auto">
-  <div class="grid-item item1">
-    {{ template "industry-table.html" .}}
+<!-- <div class="w3-section w3-serif" style="width:fit-content; margin:auto; padding-top: 80px;">
+  <header class="w3-container w3-grey">
+    <h5 class="w3-center"> {{ .message }}</h5>
+  </header>
+</div> -->
+<div class="grid-container" style="Width:75%;  margin:auto; padding-top:60px;">
+  <div class="grid-item ind1">
+    {{ template "industry-table-sizes.html" .}}
   </div>
-  <div class="grid-item item2"> {{ template "class-table.html" .}}</div>
-  <div class="grid-item item3"><h5>{{ template "industry-table-full.html" .}}</h5></div>
-  <div class="grid-item item4">{{ template "commodity-table.html" .}}</div>
-  <div class="grid-item item5"><h5>{{ template "class-table-full.html" .}}</h5></div>
+  <div class="grid-item ind2">
+    {{ template "industry-table-values.html" .}}
+  </div>
+  <div class="grid-item ind3">
+    {{ template "industry-table-prices.html" .}}
+  </div>
+  <div class="grid-item class1">
+    {{ template "class-table-sizes.html" .}}
+  </div>
+  <div class="grid-item class2">
+    {{ template "class-table-values.html" .}}
+  </div>
+  <div class="grid-item class3">
+    {{ template "class-table-prices.html" .}}
+  </div>
+  <div class="grid-item commodities">{{ template "commodity-table.html" .}}</div>
 </div>
 
 
