@@ -1,0 +1,49 @@
+<!--industries.html-->
+
+<!--Embed the header template at this location-->
+{{ template "header.html" .}}
+
+<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+  <header class="w3-container w3-blue">
+    <h3 class="w3-center"> {{ .stock.Name }}</h3>
+  </header>
+  <table id="class" class="w3-table-all w3-small">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> Simulation </td>
+        <td>{{ .stock.Simulation_id }}</td>
+      </tr>
+      <tr>
+        <td> Commodity </td>
+        <td>{{ .stock.Commodity_id }}</td>
+      </tr>
+      <tr>
+        <td> Owner Type </td>
+        <td>{{ .stock.Owner_type }}</td>
+      </tr>
+      <tr>
+        <td> Usage Type </td>
+        <td>{{ .stock.Usage_type }}</td>
+      </tr>
+      <tr>
+        <td> Size </td>
+        <td>{{ .stock.Size }}</td>
+      </tr>
+      <tr>
+        <td> Requirement </td>
+        <td>{{ .stock.Requirement }}</td>
+      </tr>
+      <tr>
+        <td> Demand </td>
+        <td>{{ .stock.Demand }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{{ template "footer.html" .}}

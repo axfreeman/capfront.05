@@ -1,0 +1,63 @@
+<!--stocks.html-->
+
+<!--Embed the header template at this location-->
+{{ template "header.html" .}}
+<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+  <header class="w3-container w3-blue">
+    <h3 class="w3-center"> {{ .Title }} </h3>
+  </header>
+
+  <table class="table table-striped w-auto" id="stocks">
+    <thead>
+      <tr>
+        <th>Usage Type and ID</th>
+        <th>Owner</th>
+        <th>Commodity</th>
+        <th>Size</th>
+        <th>Value</th>
+        <th>Price</th>
+        <th>Demand</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <!--Loop over the classes -->
+      {{range .stocks }}
+
+      <tr>
+        <td><a href="/stock/{{.Id}}">{{ .Id}}:{{ .Usage_type }}</a></td>
+        {{ if ne .Owner_type "Industry"}}
+        <td><a href="/class/{{.Owner_id}}">{{ .OwnerName }}</a> </td>
+        {{ else }}
+        <td><a href="/industry/{{.Owner_id}}">{{ .OwnerName }}</a> </td>
+        {{ end }}
+        <td><a href="/commodity/ {{ .Commodity_id}}">{{ .CommodityName }}</a></td>
+        <td style="text-align:right">{{ .Size }}</td>
+        <td style="text-align:right">{{ .Value }}</td>
+        <td style="text-align:right">{{ .Price }}</td>
+        <td style="text-align:right">{{ .Demand }}</td>
+
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+<script>
+  new DataTable('#stocks', {
+    info: false,
+    paging: false,
+    filter: false,
+    columns: [
+      null,
+      null,
+      null,
+      { orderable: false },
+      { orderable: false },
+      { orderable: false },
+      { orderable: false },
+    ]
+  })
+</script>
+
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}

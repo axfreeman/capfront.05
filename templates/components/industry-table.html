@@ -1,0 +1,32 @@
+<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+  <header class="w3-container w3-blue">
+    <h3 class="w3-center"> Industries </h3>
+  </header>
+
+  <table class="table table-striped w-auto">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th style="text-align:center">C</th>
+        <th style="text-align:center">V</th>
+        <th style="text-align:center">M</th>
+        <th style="text-align:center">C'</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!--Loop over the industries -->
+      {{range .industries }}
+
+      <tr>
+        <td>{{ .Id }}</td>
+        <td><a href="/industry/{{.Id}}">{{ .Name }}</a></td>
+        <td style="text-align:right">{{ .ConstantCapital.Size }}</td>
+        <td style="text-align:right">{{ .VariableCapital.Size}}</td>
+        <td style="text-align:right">{{ .MoneyStock.Size}}</td>
+        <td style="text-align:right">{{ .SalesStock.Size}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>

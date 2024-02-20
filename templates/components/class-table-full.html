@@ -1,0 +1,40 @@
+<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+  <header class="w3-container w3-blue">
+    <h3 class="w3-center"> Classes </h3>
+  </header>
+  <table class="table table-striped w-auto">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Simulation</th>
+        <th>Population</th>
+        <th style="text-align:center">Participation<br>Ratio</th>
+        <th  style="text-align:center">Consumption<br>Ratio</th>
+        <th>Revenue</th>
+        <th>Assets</th>
+        <th style="text-align:center">Sales<br>Stock</th>
+        <th>Supply</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!--Loop over the classes -->
+      {{range .classes }}
+
+      <tr>
+        <td> {{ .Id }}</td>
+        <td><a href="/class/{{.Id}}">{{ .Name }}</a></td>
+        <td style="text-align:right">{{ .Simulation}}</td>
+        <td style="text-align:right">{{ .Population }}</td>
+        <td style="text-align:right">{{ .Participation_Ratio }}</td>
+        <td style="text-align:right">{{ .Consumption_Ratio }}</td>
+        <td style="text-align:right">{{ .Revenue }}</td>
+        <td style="text-align:right">{{ .Assets }}</td>
+        <td><a href="/stock/{{ .SalesStock.Id}}">{{ .SalesStock.Name }}</a></td>
+        <td style="text-align:right">{{ .SalesStock.Size }}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  </div>
+  

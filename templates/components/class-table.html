@@ -1,0 +1,31 @@
+<div class="w3-section w3-card-4" style="width:fit-content; margin:auto">
+  <header class="w3-container w3-blue">
+    <h3 class="w3-center"> Social Classes </h3>
+  </header>
+
+  <table class="table table-striped w-auto">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th style="text-align:center">Consumption<br>Goods</th>
+        <th style="text-align:center">For<br>Sale</th>
+        <th style="text-align:center">Money</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!--Loop over the classes -->
+      {{range .classes }}
+
+      <tr>
+        <td>{{ .Id }}</td>
+        <td><a href="/class/{{.Id}}">{{ .Name }}</a></td>
+        <td style="text-align:right">{{ .ConsumerGood.Size }}</td>
+        <td style="text-align:right">{{ .SalesStock.Size }}</td>
+        <td style="text-align:right">{{ .MoneyStock.Size }}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+

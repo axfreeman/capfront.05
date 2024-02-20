@@ -1,0 +1,52 @@
+{{ template "header.html" .}}
+<style>
+  .grid-container {
+    display: grid;
+    gap: 5px;
+    padding: 10px;
+  }
+
+  .grid-item {
+    text-align: center;
+    padding: 5px;
+  }
+
+  .item1 {
+    grid-column: 1 / span 1;
+    grid-row: 1;
+  }
+
+  .item2 {
+    grid-column: 2;
+    grid-row: 1 / span 1;
+  }
+
+  .item3 {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+  }
+
+  .item4 {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+  }
+
+  .item5 {
+    grid-column: 1 / span 2;
+    grid-row: 4;
+  }
+</style>
+
+<div class="grid-container" style="Width:75%;  margin:auto">
+  <div class="grid-item item1">
+    {{ template "industry-table.html" .}}
+  </div>
+  <div class="grid-item item2"> {{ template "class-table.html" .}}</div>
+  <div class="grid-item item3"><h5>{{ template "industry-table-full.html" .}}</h5></div>
+  <div class="grid-item item4">{{ template "commodity-table.html" .}}</div>
+  <div class="grid-item item5"><h5>{{ template "class-table-full.html" .}}</h5></div>
+</div>
+
+
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}
