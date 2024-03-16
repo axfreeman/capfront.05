@@ -72,10 +72,12 @@ func ActionHandler(ctx *gin.Context) {
 	// This is a very crude mechanism
 	visitedPageURL := strings.Split(lastVisitedPage, "/")
 	log.Output(1, fmt.Sprintf("The last page this user visited was %v and this was split into%v", lastVisitedPage, visitedPageURL))
-	v := visitedPageURL[0]
-	if v == `commodities` || v == `industries` || v == `classes` || v == `stocks` {
+	// v := visitedPageURL[0]
+	if lastVisitedPage == `/commodities` || lastVisitedPage == `/industries` || lastVisitedPage == `/classes` || lastVisitedPage == `/stocks` {
+		fmt.Print("redirection")
 		ctx.Redirect(http.StatusFound, lastVisitedPage)
 	} else {
+		fmt.Print("not redirecting")
 		ctx.Redirect(http.StatusFound, "/index")
 	}
 	// //TODO set time stamp
