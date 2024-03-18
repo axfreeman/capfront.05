@@ -24,7 +24,7 @@ type ApiItem struct {
 var UserMessage string
 
 // a list of items needed to fetch data from the remote server
-var ApiList = [8]ApiItem{
+var ApiList = [10]ApiItem{
 	{`template`, `simulations/templates/`},
 	{`users`, `users/`},
 	{`simulation`, `simulations/mine/`},
@@ -32,6 +32,8 @@ var ApiList = [8]ApiItem{
 	{`industry`, `industries/`},
 	{`class`, `classes/`},
 	{`stock`, `stocks/`},
+	{`industry_stock`, `stocks/industry/`},
+	{`class_stock`, `stocks/class/`},
 	{`trace`, `trace/`},
 }
 
@@ -65,6 +67,10 @@ func FetchAPI(item *ApiItem, username string) (result bool) {
 		jsonErr = json.Unmarshal(body, &models.Users[username].ClassList)
 	case `stock`:
 		jsonErr = json.Unmarshal(body, &models.Users[username].StockList)
+	case `industry_stock`:
+		jsonErr = json.Unmarshal(body, &models.Users[username].IndustryStockList)
+	case `class_stock`:
+		jsonErr = json.Unmarshal(body, &models.Users[username].ClassStockList)
 	case `trace`:
 		jsonErr = json.Unmarshal(body, &models.Users[username].TraceList)
 	default:

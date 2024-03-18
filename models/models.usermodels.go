@@ -24,6 +24,8 @@ type UserData struct {
 	IndustryList      []Industry   // ...
 	ClassList         []Class
 	StockList         []Stock
+	IndustryStockList []Industry_Stock
+	ClassStockList    []Class_Stock
 	TraceList         []Trace
 }
 

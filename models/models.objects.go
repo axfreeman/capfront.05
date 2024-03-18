@@ -117,6 +117,32 @@ type Stock struct {
 	Demand        float32 `json:"demand" `
 }
 
+type Industry_Stock struct {
+	Id            int     `json:"id" gorm:"primary_key"`
+	Simulation_id int     `json:"simulation_id" `
+	Industry_id   int     `json:"industry_id"`
+	Commodity_id  int     `json:"commodity_id" `
+	Name          string  `json:"name" `
+	Usage_type    string  `json:"usage_type" `
+	Size          float32 `json:"size" `
+	Value         float32 `json:"value" `
+	Price         float32 `json:"price" `
+	Requirement   float32 `json:"requirement" `
+	Demand        float32 `json:"demand" `
+}
+
+type Class_Stock struct {
+	Id            int     `json:"id" gorm:"primary_key"`
+	Simulation_id int     `json:"simulation_id" `
+	Class_id      int     `json:"class_id"`
+	Commodity_id  int     `json:"commodity_id" `
+	Name          string  `json:"name" `
+	Usage_type    string  `json:"usage_type" `
+	Size          float32 `json:"size" `
+	Value         float32 `json:"value" `
+	Price         float32 `json:"price" `
+}
+
 // This list of templates is common to all users
 // It would normally change only when the database is reset
 // from immutable fixtures using Refresh(). It is initialized
