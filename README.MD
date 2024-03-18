@@ -50,3 +50,8 @@ This frontend works in conjunction with the backend that provides an API through
 
 * https://gin-gonic.com/docs/examples/redirects/  
 * https://stackoverflow.com/questions/68836237/how-to-get-full-server-url-from-any-endpoint-handler-in-gin  
+
+# Handling text pages
+I wanted a simple 'about' page to explain the project. This can be made more sophisticated as time goes on.
+
+* https://go.dev/doc/articles/wiki/ very simple basic
