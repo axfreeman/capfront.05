@@ -1,5 +1,6 @@
 // display.objects.go
 // handlers to display the objects of the simulation on the user's browser
+// TODO move this to 'display.objects.go'
 
 package display
 
