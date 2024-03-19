@@ -23,7 +23,6 @@ type UserData struct {
 	CommodityList     []Commodity  // all the commodity objects this user has created
 	IndustryList      []Industry   // ...
 	ClassList         []Class
-	StockList         []Stock
 	IndustryStockList []Industry_Stock
 	ClassStockList    []Class_Stock
 	TraceList         []Trace

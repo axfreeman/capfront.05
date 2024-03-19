@@ -159,24 +159,6 @@ func ShowClasses(ctx *gin.Context) {
 	})
 }
 
-// display all stocks in the current simulation
-func ShowStocks(ctx *gin.Context) {
-	username, loginStatus, _ := userStatus(ctx)
-	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
-		return
-	}
-
-	state := get_current_state(username)
-	ctx.HTML(http.StatusOK, "stocks.html", gin.H{
-		"Title":          "Stocks",
-		"stocks":         models.Users[username].StockList,
-		"username":       username,
-		"loggedinstatus": loginStatus,
-		"state":          state,
-	})
-}
-
 // Display one specific commodity
 func ShowCommodity(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
@@ -241,31 +223,6 @@ func ShowClass(ctx *gin.Context) {
 			ctx.HTML(http.StatusOK, "class.html", gin.H{
 				"Title":          "Class",
 				"class":          models.Users[username].ClassList[i],
-				"username":       username,
-				"loggedinstatus": loginStatus,
-				"state":          state,
-			})
-		}
-	}
-}
-
-// Display one specific stock
-func ShowStock(ctx *gin.Context) {
-	username, loginStatus, _ := userStatus(ctx)
-	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
-		return
-	}
-
-	state := get_current_state(username)
-
-	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
-	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.Users[username].StockList); i++ {
-		if id == models.Users[username].StockList[i].Id {
-			ctx.HTML(http.StatusOK, "stock.html", gin.H{
-				"Title":          "Stock",
-				"stock":          models.Users[username].StockList[i],
 				"username":       username,
 				"loggedinstatus": loginStatus,
 				"state":          state,

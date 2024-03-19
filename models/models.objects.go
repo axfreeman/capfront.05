@@ -100,23 +100,6 @@ type Class struct {
 	Assets              float32 `json:"assets"`
 }
 
-type Stock struct {
-	Id            int `json:"id" gorm:"primary_key"`
-	Simulation_id int `json:"simulation_id" `
-	Time_Stamp    int
-	UserName      string  `json:"username"`
-	Owner_id      int     `json:"owner_id"`
-	Commodity_id  int     `json:"commodity_id" `
-	Name          string  `json:"name" `
-	Owner_type    string  `json:"owner_type" `
-	Usage_type    string  `json:"usage_type" `
-	Size          float32 `json:"size" `
-	Value         float32 `json:"value" `
-	Price         float32 `json:"price" `
-	Requirement   float32 `json:"requirement" `
-	Demand        float32 `json:"demand" `
-}
-
 type Industry_Stock struct {
 	Id            int     `json:"id" gorm:"primary_key"`
 	Simulation_id int     `json:"simulation_id" `
