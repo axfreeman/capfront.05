@@ -20,21 +20,32 @@ import (
 // A simple solution would be to add direct links to related objects in the models
 // perhaps populated by an asynchronous process in the background
 
-// A default stock returned if any condition is not met (that is, if the predicated stock does not exist)
+// A default Industry_stock returned if any condition is not met (that is, if the predicated stock does not exist)
 // Used to signal to the user that there has been a programme error
-var NotFoundStock = Stock{
+var NotFoundIndustryStock = Industry_Stock{
 	Id:            0,
 	Simulation_id: 0,
-	Time_Stamp:    0,
-	Owner_id:      0,
 	Commodity_id:  0,
 	Name:          "NOT FOUND",
-	Owner_type:    "PROGRAMME ERROR",
 	Usage_type:    "PROGRAMME ERROR",
 	Size:          -1,
 	Value:         -1,
 	Price:         -1,
 	Requirement:   -1,
+	Demand:        -1,
+}
+
+// A default Industry_stock returned if any condition is not met (that is, if the predicated stock does not exist)
+// Used to signal to the user that there has been a programme error
+var NotFoundClassStock = Class_Stock{
+	Id:            0,
+	Simulation_id: 0,
+	Commodity_id:  0,
+	Name:          "NOT FOUND",
+	Usage_type:    "PROGRAMME ERROR",
+	Size:          -1,
+	Value:         -1,
+	Price:         -1,
 	Demand:        -1,
 }
 
@@ -63,45 +74,45 @@ var NotFoundCommodity = Commodity{
 
 // returns the money stock of the given industry
 // WAS err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", industry.Id, "Money").StructScan(&stock)
-func (industry Industry) MoneyStock() Stock {
+func (industry Industry) MoneyStock() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].IndustryStockList)
 	for i := 0; i < len(stockList); i++ {
 		s := stockList[i]
-		if (s.Owner_id == industry.Id) && (s.Usage_type == `Money`) {
+		if (s.Industry_id == industry.Id) && (s.Usage_type == `Money`) {
 			return s
 		}
 	}
-	return NotFoundStock
+	return NotFoundIndustryStock
 }
 
 // returns the sales stock of the given industry
 // WAS 	err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", industry.Id, "Sales").StructScan(&stock)
-func (industry Industry) SalesStock() Stock {
+func (industry Industry) SalesStock() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].IndustryStockList)
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == industry.Id) && (s.Usage_type == `Sales`) {
+		if (s.Industry_id == industry.Id) && (s.Usage_type == `Sales`) {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundIndustryStock
 }
 
 // returns the Labour Power stock of the given industry
 // was query := `SELECT stocks.* FROM stocks INNER JOIN commodities ON stocks.commodity_id = commodities.id where stocks.owner_id = ? AND Usage_type ="Production" AND commodities.name="Labour Power"`
 // bit of a botch to use the name of the commodity as a search term
-func (industry Industry) VariableCapital() Stock {
+func (industry Industry) VariableCapital() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].IndustryStockList)
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Labour Power") {
+		if (s.Industry_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Labour Power") {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundIndustryStock
 }
 
 // returns the commodity that an industry produces
@@ -112,16 +123,16 @@ func (industry Industry) OutputCommodity() *Commodity {
 // return the productive capital stock of the given industry
 // under development - at present assumes there is only one
 // was 	query := `SELECT stocks.* FROM stocks INNER JOIN commodities ON stocks.commodity_id = commodities.id where stocks.owner_id = ? AND Usage_type ="Production" AND commodities.name="Means of Production"`
-func (industry Industry) ConstantCapital() Stock {
+func (industry Industry) ConstantCapital() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].IndustryStockList)
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Means of Production") {
+		if (s.Industry_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Means of Production") {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundIndustryStock
 }
 
 // returns all the constant capitals of a given industry
@@ -134,95 +145,66 @@ func (industry Industry) ConstantCapital() Stock {
 
 // returns the sales stock of the given class
 // was 	err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", class.Id, "Sales").StructScan(&stock)
-func (class Class) MoneyStock() Stock {
+func (class Class) MoneyStock() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].ClassStockList)
 
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == class.Id) && (s.Usage_type == `Money`) {
+		if (s.Class_id == class.Id) && (s.Usage_type == `Money`) {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundClassStock
 }
 
 // returns the sales stock of the given class
-func (class Class) SalesStock() Stock {
+func (class Class) SalesStock() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].ClassStockList)
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == class.Id) && (s.Usage_type == `Sales`) {
+		if (s.Class_id == class.Id) && (s.Usage_type == `Sales`) {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundClassStock
 }
 
 // returns the consumption stock of the given class
 // under development - at present assumes there is only one
 // WAS 	query := `SELECT stocks.* FROM stocks INNER JOIN commodities ON stocks.commodity_id = commodities.id where stocks.owner_id = ? AND Usage_type ="Consumption" AND commodities.name="Consumption"`
-func (class Class) ConsumerGood() Stock {
+func (class Class) ConsumerGood() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].StockList)
+	stockList := (Users[username].ClassStockList)
 
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
-		if (s.Owner_id == class.Id) && (s.Usage_type == `Consumption`) {
+		if (s.Class_id == class.Id) && (s.Usage_type == `Consumption`) {
 			return *s
 		}
 	}
-	return NotFoundStock
+	return NotFoundClassStock
 }
 
-// METHODS OF STOCKS
-
-// returns a string specifying the stub of the URL that yields the owner of this stock
-// if the stock is owned by an industry, this will link to an Industry object
-// if the stock is owned by a social class, this URL will link to a class object
-func (i Stock) OwnerLinkStub() string {
-	switch i.Owner_type {
-	case `Industry`:
-		return `/industry`
-	case `Class`:
-		return `/class`
-	default:
-		return `unknown owner type`
-	}
-}
+// METHODS OF INDUSTRY STOCKS
 
 // fetches the name of the owner of this stock
-// WAS err = db.SDB.QueryRowx("SELECT * FROM industries where Id = ?", stock.Owner_id).StructScan(&industry)
-// WAS err = db.SDB.QueryRowx("SELECT * FROM classes where Id = ?", s.Owner_id).StructScan(&class)
-func (s Stock) OwnerName() string {
+func (s Industry_Stock) OwnerName() string {
 	username := s.UserName
-	switch s.Owner_type {
-	case `Industry`:
-		industryList := (Users[username].IndustryList)
-		for i := 0; i < len(industryList); i++ {
-			ind := &industryList[i]
-			if s.Owner_id == ind.Id {
-				return ind.Name
-			}
+	industryList := (Users[username].IndustryList)
+	for i := 0; i < len(industryList); i++ {
+		ind := &industryList[i]
+		if s.Industry_id == ind.Id {
+			return ind.Name
 		}
-	case `Class`:
-		classList := (Users[username].ClassList)
-		for i := 0; i < len(classList); i++ {
-			c := &classList[i]
-			if s.Owner_id == c.Id {
-				return c.Name
-			}
-		}
-	default:
-		return `UNKNOWN OWNER`
 	}
 	return `UNKNOWN OWNER`
 }
 
-// return the name of the commodity that the given stock consists of
+// return the name of the commodity that the given Industry_Stock consists of
 // WAS 	rows, err := db.SDB.Queryx("SELECT * FROM commodities where Id = ?", i.Commodity_id)
-func (s Stock) CommodityName() string {
+func (s Industry_Stock) CommodityName() string {
 	username := s.UserName
 	commodityList := (Users[username].CommodityList)
 	for i := 0; i < len(commodityList); i++ {
@@ -236,7 +218,7 @@ func (s Stock) CommodityName() string {
 
 // return the commodity object that the given stock consists of
 // WAS 	rows, err := db.SDB.Queryx("SELECT * FROM commodities where Id = ?", i.Commodity_id)
-func (s Stock) Commodity() *Commodity {
+func (s Industry_Stock) Commodity() *Commodity {
 	username := s.UserName
 	commodityList := (Users[username].CommodityList)
 	for i := 0; i < len(commodityList); i++ {
@@ -250,7 +232,7 @@ func (s Stock) Commodity() *Commodity {
 
 // under development
 // will eventually be parameterised to yield value, price or quantity depending on a 'display' parameter
-func (stock Stock) DisplaySize(mode string) float32 {
+func (stock Industry_Stock) DisplaySize(mode string) float32 {
 	switch mode {
 	case `prices`:
 		return stock.Size
@@ -266,4 +248,66 @@ func (stock Stock) DisplaySize(mode string) float32 {
 // We may also use such methods in the Trace function to improve usability
 func (s Simulation) Link() string {
 	return `/user/create/` + strconv.Itoa(s.Id)
+}
+
+// fetches the industry that owns this industry stock
+// If it has none (an error, but we need to diagnose it) return nil.
+func (s Industry_Stock) Industry() *Industry {
+	industryList := (Users[s.UserName].IndustryList)
+	for i := 0; i < len(industryList); i++ {
+		ind := &industryList[i]
+		if s.Industry_id == ind.Id {
+			return ind
+		}
+	}
+	return nil
+}
+
+// fetches the name of the industry that owns this industry stock.
+// If it has none (an error, but we need to diagnose it) return "UNKNOWN INDUSTRY"
+func (s Industry_Stock) IndustryName() string {
+	i := s.Industry()
+	if i == nil {
+		return "UNKNOWN INDUSTRY"
+	}
+	return i.Name
+}
+
+// METHODS OF CLASS STOCKS
+
+// fetches the class that owns this Class_stock
+// If it has none (an error, but we need to diagnose it) return nil.
+func (s Class_Stock) Class() *Class {
+	classList := (Users[s.UserName].ClassList)
+	for i := 0; i < len(classList); i++ {
+		ind := &classList[i]
+		if s.Class_id == ind.Id {
+			return ind
+		}
+	}
+	return nil
+}
+
+// fetches the name of the Class that owns this Class_stock.
+// If it has none (an error, but we need to diagnose it) return "UNKNOWN CLASS"
+func (s Class_Stock) ClassName() string {
+	c := s.Class()
+	if c == nil {
+		return "UNKNOWN CLASS"
+	}
+	return c.Name
+}
+
+// Return the name of the commodity that this Class_Stock consists of.
+// Return "UNKNOWN COMMODITY" if this is not found.
+func (s Class_Stock) CommodityName() string {
+	username := s.UserName
+	commodityList := (Users[username].CommodityList)
+	for i := 0; i < len(commodityList); i++ {
+		c := commodityList[i]
+		if s.Commodity_id == c.Id {
+			return c.Name
+		}
+	}
+	return `UNKNOWN COMMODITY`
 }

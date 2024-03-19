@@ -1,4 +1,4 @@
-<!--stocks.html-->
+<!--industry-stocks.html-->
 
 <!--Embed the header template at this location-->
 {{ template "header.html" .}}
@@ -13,14 +13,13 @@
       <thead>
         <tr>
           <th>Usage Type</th>
-          <th>Owner</th>
+          <th>Industry</th>
           <th>Commodity</th>
           <th>Size</th>
           <th>Value</th>
           <th>Price</th>
           <th>Coefficient</th>
           <th>Demand</th>
-
         </tr>
       </thead>
       <tbody>
@@ -29,11 +28,7 @@
 
         <tr>
           <td><a href="/stock/{{.Id}}">{{ .Usage_type }}</a></td>
-          {{ if ne .Owner_type "Industry"}}
-          <td><a href="/class/{{.Owner_id}}">{{ .OwnerName }}</a> </td>
-          {{ else }}
-          <td><a href="/industry/{{.Owner_id}}">{{ .OwnerName }}</a> </td>
-          {{ end }}
+          <td><a href="/class/{{.Industry_id}}">{{ .IndustryName }}</a> </td>
           <td><a href="/commodity/{{ .Commodity_id}}">{{ .CommodityName }}</a></td>
           <td style="text-align:right">{{ .Size }}</td>
           <td style="text-align:right">{{ .Value }}</td>
