@@ -25,6 +25,8 @@ var SECRET_ADMIN_PASSWORD string = "insecure"
 var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
 // var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
 
+//Force heroku update
+
 // Get the user's identity from the browser by retrieving a cookie
 // return err if cookie cannot be retrieved (normally, because it isn't there)
 func Get_current_user(ctx *gin.Context) (string, error) {
