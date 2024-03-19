@@ -143,6 +143,7 @@ type Class_Stock struct {
 	Size          float32 `json:"size" `
 	Value         float32 `json:"value" `
 	Price         float32 `json:"price" `
+	Demand        float32 `json:"demand" `
 }
 
 // This list of templates is common to all users.

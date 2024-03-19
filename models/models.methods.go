@@ -218,43 +218,6 @@ func (s Stock) OwnerName() string {
 	return `UNKNOWN OWNER`
 }
 
-// fetches the industry that owns this industry stock
-// If it has none (an error, but we need to diagnose it) return nil.
-func (s Industry_Stock) Industry() *Industry {
-	industryList := (Users[s.UserName].IndustryList)
-	for i := 0; i < len(industryList); i++ {
-		ind := &industryList[i]
-		if s.Industry_id == ind.Id {
-			return ind
-		}
-	}
-	return nil
-}
-
-// fetches the name of the industry that owns this industry stock.
-// If it has none (an error, but we need to diagnose it) return "ERR"
-func (s Industry_Stock) IndustryName() string {
-	i := s.Industry()
-	if i == nil {
-		return "ERR"
-	}
-	return i.Name
-}
-
-// Return the name of the commodity that the given industry stock consists of.
-// Return "UNKNOWN COMMODITY" if this is not found.
-func (s Industry_Stock) CommodityName() string {
-	username := s.UserName
-	commodityList := (Users[username].CommodityList)
-	for i := 0; i < len(commodityList); i++ {
-		c := commodityList[i]
-		if s.Commodity_id == c.Id {
-			return c.Name
-		}
-	}
-	return `UNKNOWN COMMODITY`
-}
-
 // return the name of the commodity that the given stock consists of
 // WAS 	rows, err := db.SDB.Queryx("SELECT * FROM commodities where Id = ?", i.Commodity_id)
 func (s Stock) CommodityName() string {
@@ -301,4 +264,80 @@ func (stock Stock) DisplaySize(mode string) float32 {
 // We may also use such methods in the Trace function to improve usability
 func (s Simulation) Link() string {
 	return `/user/create/` + strconv.Itoa(s.Id)
+}
+
+// TODO METHODS OF INDUSTRY STOCKS
+// fetches the industry that owns this industry stock
+// If it has none (an error, but we need to diagnose it) return nil.
+func (s Industry_Stock) Industry() *Industry {
+	industryList := (Users[s.UserName].IndustryList)
+	for i := 0; i < len(industryList); i++ {
+		ind := &industryList[i]
+		if s.Industry_id == ind.Id {
+			return ind
+		}
+	}
+	return nil
+}
+
+// fetches the name of the industry that owns this industry stock.
+// If it has none (an error, but we need to diagnose it) return "UNKNOWN INDUSTRY"
+func (s Industry_Stock) IndustryName() string {
+	i := s.Industry()
+	if i == nil {
+		return "UNKNOWN INDUSTRY"
+	}
+	return i.Name
+}
+
+// Return the name of the commodity that the given industry stock consists of.
+// Return "UNKNOWN COMMODITY" if this is not found.
+func (s Industry_Stock) CommodityName() string {
+	username := s.UserName
+	commodityList := (Users[username].CommodityList)
+	for i := 0; i < len(commodityList); i++ {
+		c := commodityList[i]
+		if s.Commodity_id == c.Id {
+			return c.Name
+		}
+	}
+	return `UNKNOWN COMMODITY`
+}
+
+// TODO METHODS OF CLASS STOCKS
+// fetches the industry that owns this industry stock
+// If it has none (an error, but we need to diagnose it) return nil.
+func (s Class_Stock) Class() *Class {
+	classList := (Users[s.UserName].ClassList)
+	for i := 0; i < len(classList); i++ {
+		ind := &classList[i]
+		if s.Class_id == ind.Id {
+			return ind
+		}
+	}
+	return nil
+}
+
+// fetches the name of the industry that owns this industry stock.
+// If it has none (an error, but we need to diagnose it) return "UNKNOWN CLASS"
+func (s Class_Stock) ClassName() string {
+	c := s.Class()
+	if c == nil {
+		return "UNKNOWN CLASS"
+	}
+	return c.Name
+}
+
+// Return the name of the commodity that the given industry stock consists of.
+// Return "UNKNOWN COMMODITY" if this is not found.
+func (s Class_Stock) CommodityName() string {
+	username := s.UserName
+	commodityList := (Users[username].CommodityList)
+	for i := 0; i < len(commodityList); i++ {
+		c := commodityList[i]
+		if s.Commodity_id == c.Id {
+			return c.Name
+		}
+	}
+	return `UNKNOWN COMMODITY`
 }
