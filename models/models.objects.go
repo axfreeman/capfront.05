@@ -122,6 +122,7 @@ type Industry_Stock struct {
 	Simulation_id int     `json:"simulation_id" `
 	Industry_id   int     `json:"industry_id"`
 	Commodity_id  int     `json:"commodity_id" `
+	UserName      string  `json:"username"`
 	Name          string  `json:"name" `
 	Usage_type    string  `json:"usage_type" `
 	Size          float32 `json:"size" `
@@ -135,7 +136,8 @@ type Class_Stock struct {
 	Id            int     `json:"id" gorm:"primary_key"`
 	Simulation_id int     `json:"simulation_id" `
 	Class_id      int     `json:"class_id"`
-	Commodity_id  int     `json:"commodity_id" `
+	Commodity_id  int     `json:"commodity_id"`
+	UserName      string  `json:"username"`
 	Name          string  `json:"name" `
 	Usage_type    string  `json:"usage_type" `
 	Size          float32 `json:"size" `
@@ -143,9 +145,10 @@ type Class_Stock struct {
 	Price         float32 `json:"price" `
 }
 
-// This list of templates is common to all users
-// It would normally change only when the database is reset
-// from immutable fixtures using Refresh(). It is initialized
-// when this frontend restarts. In future there should be
-// some procedure for adding new templates or editing existing ones
+// This list of templates is common to all users.
+// It would normally change only when the database is reset from
+// immutable fixtures using Refresh().
+// It is initialized when this frontend restarts.
+// In future there should be some procedure for adding new templates
+// or editing existing ones.
 var TemplateList []Simulation

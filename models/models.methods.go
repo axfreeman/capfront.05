@@ -193,8 +193,6 @@ func (i Stock) OwnerLinkStub() string {
 }
 
 // fetches the name of the owner of this stock
-// WAS err = db.SDB.QueryRowx("SELECT * FROM industries where Id = ?", stock.Owner_id).StructScan(&industry)
-// WAS err = db.SDB.QueryRowx("SELECT * FROM classes where Id = ?", s.Owner_id).StructScan(&class)
 func (s Stock) OwnerName() string {
 	username := s.UserName
 	switch s.Owner_type {
@@ -218,6 +216,43 @@ func (s Stock) OwnerName() string {
 		return `UNKNOWN OWNER`
 	}
 	return `UNKNOWN OWNER`
+}
+
+// fetches the industry that owns this industry stock
+// If it has none (an error, but we need to diagnose it) return nil.
+func (s Industry_Stock) Industry() *Industry {
+	industryList := (Users[s.UserName].IndustryList)
+	for i := 0; i < len(industryList); i++ {
+		ind := &industryList[i]
+		if s.Industry_id == ind.Id {
+			return ind
+		}
+	}
+	return nil
+}
+
+// fetches the name of the industry that owns this industry stock.
+// If it has none (an error, but we need to diagnose it) return "ERR"
+func (s Industry_Stock) IndustryName() string {
+	i := s.Industry()
+	if i == nil {
+		return "ERR"
+	}
+	return i.Name
+}
+
+// Return the name of the commodity that the given industry stock consists of.
+// Return "UNKNOWN COMMODITY" if this is not found.
+func (s Industry_Stock) CommodityName() string {
+	username := s.UserName
+	commodityList := (Users[username].CommodityList)
+	for i := 0; i < len(commodityList); i++ {
+		c := commodityList[i]
+		if s.Commodity_id == c.Id {
+			return c.Name
+		}
+	}
+	return `UNKNOWN COMMODITY`
 }
 
 // return the name of the commodity that the given stock consists of

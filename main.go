@@ -58,6 +58,8 @@ func main() {
 	r.GET("/commodities", display.ShowCommodities)
 	r.GET("/industries", display.ShowIndustries)
 	r.GET("/classes", display.ShowClasses)
+	r.GET("/industry_stocks", display.ShowIndustryStocks)
+	r.GET("/class_stocks", display.ShowClassStocks)
 	r.GET("/stocks", display.ShowStocks)
 	r.GET("/industry/:id", display.ShowIndustry)
 	r.GET("/commodity/:id", display.ShowCommodity)

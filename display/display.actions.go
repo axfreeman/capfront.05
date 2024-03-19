@@ -81,7 +81,7 @@ func ActionHandler(ctx *gin.Context) {
 		ctx.Redirect(http.StatusFound, "/index")
 	}
 	// //TODO set time stamp
-	// TODO why tf don't the log statements (or their println equivalents) produce any output?
+	// TODO why don't the log statements (or their println equivalents) produce any output?
 }
 
 // Creates a new simulation for the logged-in user, from the template specified by the 'id' parameter
@@ -97,6 +97,7 @@ func CreateSimulation(ctx *gin.Context) {
 		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
 		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
 	}
+
 	api.Refresh(ctx, username)
 	ShowIndexPage(ctx)
 }
