@@ -48,6 +48,7 @@ var NotFoundClassStock = Class_Stock{
 	Price:         -1,
 	Demand:        -1,
 }
+
 var NotFoundCommodity = Commodity{
 	Id:                          0,
 	Name:                        "NOT FOUND",
