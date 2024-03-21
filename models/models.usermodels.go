@@ -28,6 +28,13 @@ type UserData struct {
 	TraceList         []Trace
 }
 
+// Format of responses from the server for post requests
+// Specifically (so far), login or register.
+type ServerMessage struct {
+	Message    string `json:"message"`
+	StatusCode int    `json:"statusCode"`
+}
+
 // Abbreviated user details as supplied by server
 // Used (for example) to obtain the current simulation after cloning
 type UserServerData struct {

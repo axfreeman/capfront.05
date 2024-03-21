@@ -110,7 +110,7 @@ func set_current_state(username string, new_state string) {
 func ShowCommodities(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -128,7 +128,7 @@ func ShowCommodities(ctx *gin.Context) {
 func ShowIndustries(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -146,7 +146,7 @@ func ShowIndustries(ctx *gin.Context) {
 func ShowClasses(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -163,7 +163,7 @@ func ShowClasses(ctx *gin.Context) {
 func ShowCommodity(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -187,7 +187,7 @@ func ShowCommodity(ctx *gin.Context) {
 func ShowIndustry(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -211,7 +211,7 @@ func ShowIndustry(ctx *gin.Context) {
 func ShowClass(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -236,7 +236,7 @@ func ShowClass(ctx *gin.Context) {
 func ShowIndexPage(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -259,7 +259,7 @@ func ShowIndexPage(ctx *gin.Context) {
 func ShowTrace(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -282,7 +282,7 @@ func ShowTrace(ctx *gin.Context) {
 func UserDashboard(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -311,7 +311,7 @@ func DataHandler(ctx *gin.Context) {
 func SwitchSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -325,7 +325,7 @@ func SwitchSimulation(ctx *gin.Context) {
 func DeleteSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
@@ -339,7 +339,7 @@ func DeleteSimulation(ctx *gin.Context) {
 func RestartSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/register")
+		ctx.Redirect(http.StatusFound, "/login")
 		return
 	}
 
