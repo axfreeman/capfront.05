@@ -70,7 +70,7 @@ func main() {
 	r.POST("/user/login", display.HandleLoginRequest)
 	r.GET("/logout", display.ClientLogoutRequest)
 	r.GET("/register", display.CaptureRegisterRequest)
-	r.GET("/user/register", display.HandleRegisterRequest)
+	r.POST("/user/register", display.HandleRegisterRequest)
 	r.GET("/user/create/:id", display.CreateSimulation)
 	r.GET("/user/dashboard", display.UserDashboard)
 	r.GET("/user/switch/:id", display.SwitchSimulation)

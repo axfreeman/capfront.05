@@ -163,30 +163,32 @@ func ClientLogoutRequest(ctx *gin.Context) {
 }
 
 // Asks the client to register.
-// TODO integrate this with the login page
 func CaptureRegisterRequest(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "register.html", gin.H{})
 }
 
-// Service the form submitted when a user logs in.
+// Service the form submitted when a user registers.
 // Because of the setup, it merely passes the request to the backend server
 func HandleRegisterRequest(ctx *gin.Context) {
 	clientRequest := ctx.Request
 	clientRequest.ParseForm()
 	username := clientRequest.Form["username"][0]
 	password := clientRequest.Form["password"][0]
-	serverPayload, err := ServerRegister(username, password)
+	serverPayload, err := ServerRegister(username, password) // Ask the server to do the heavy lifting
 
 	if err != nil { // something went wrong; tell the developer and tell the user
 		message := fmt.Sprintf("%s", serverPayload["message"])
 		log.Output(1, message)
-		ctx.HTML(http.StatusOK, "login.html", gin.H{
-			"message": "Could not log you in",
-			"advice":  "Please try again",
+		ctx.HTML(serverPayload["StatusCode"].(int), "login.html", gin.H{
+			"message": "The server didn't like this",
+			"advice":  "Please report this",
 			"info":    "Or ask me to register you",
+			"error":   err,
 		})
 		return
 	}
+	ctx.Redirect(http.StatusFound, "/login")
+
 }
 
 // Compose and send a request to the server to register.
@@ -194,7 +196,6 @@ func HandleRegisterRequest(ctx *gin.Context) {
 // It also has a lot of boilerplate code that simply repeats what is
 // in CaptureLoginRequest().
 // That's because it is a learning project for me.
-
 // This function can be called either by the client (this project) using
 // data entered by the user via the login form.
 // OR can be generated internally, though I can't think of a user case for that.
@@ -208,13 +209,14 @@ func ServerRegister(username string, password string) (gin.H, error) {
 	}
 	serverRequest.Header.Set("Authorization", "Basic Og==")
 	serverRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	print("Sending register request to server\n", serverpayload)
 	res, err := client.Do(serverRequest)
 	if err != nil {
-		return map[string]any{"loggedinstatus": false, "message": excuses["server"].apologize(err)}, errors.New("registration failed")
+		return map[string]any{"loggedinstatus": false, "message": excuses["server"].apologize(err)}, fmt.Errorf("error%v", err)
 	}
 
 	if res.StatusCode != 200 {
-		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("registration failed")
+		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("registration request rejected")
 	}
 	defer res.Body.Close()
 
@@ -223,12 +225,19 @@ func ServerRegister(username string, password string) (gin.H, error) {
 		return gin.H{"loggedinstatus": false, "message": excuses["narfy"].apologize(err)}, errors.New("registration failed")
 	}
 
-	var target map[string]string // Receives the token from the server
+	var target models.ServerMessage // Receives the response from the server
 	jsonerr := json.Unmarshal(body, &target)
 	if jsonerr != nil {
 		return gin.H{"loggedinstatus": false, "message": excuses["comms"].apologize(err)}, errors.New("registration failed")
 	}
 
+	log.Output(1, fmt.Sprintf(" The server response was %v with status code %d", target.Message, target.StatusCode))
+
+	if target.StatusCode != 200 {
+		log.Output(1, fmt.Sprintf(" Could not register user %s because the server said '%s'\n", username, target.Message))
+		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("registration request rejected")
+	}
+
 	log.Output(1, fmt.Sprintf(" Registered user %s \n", username))
-	return gin.H{"message": "Registration succeeded. Please log in"}, errors.New("registration failed")
+	return gin.H{"message": "Registration succeeded. Please log in"}, nil
 }

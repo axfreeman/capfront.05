@@ -1,4 +1,5 @@
 ## Initial list of tests
+[None implemented yet :-() ]
 * If non-admin user tries to execute admin-specific endpoints, flag error
 # TEST
 * Delete in frontend also deletes in backend
