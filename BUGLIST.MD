@@ -1,5 +1,15 @@
 # Unsystematic list of required changes and fixes.  
 
+## Priority
+
+* After 'Trade' the size of Labour Power has been updated, but not the value or price.
+* Display numbers nicely formatted.
+* The actions do not all remember the page that the user was watching
+* Register
+* Consumption regenerates the size of Labour Power but not its value or price.
+
+## Some time
+
 ### Action processing
 * Move to sidebar  
 
