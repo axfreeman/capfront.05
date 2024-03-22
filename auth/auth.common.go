@@ -22,8 +22,8 @@ var URLheader string
 // TODO put these into an env file
 var SECRET_ADMIN_PASSWORD string = "insecure"
 
-var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
-// var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
+// var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
+var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
 
 //Force heroku update
 
@@ -96,4 +96,12 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	// The content of the user message, if the action succeeds,
 	// should be set by the handler responsible for it.
 	return b, nil
+}
+
+// utility function to diagnose errors in the list of users
+func PrintUsers() {
+	for key, value := range models.Users {
+		fmt.Println("List of users and their contents")
+		fmt.Printf("%s\t:%v\n", key, value)
+	}
 }

@@ -140,6 +140,7 @@ func ServerLogin(username string, password string) (gin.H, error) {
 
 	accessToken := target["access_token"]
 	log.Output(1, fmt.Sprintf(" Logged in user %s \n", username))
+	auth.PrintUsers() // Comment in for extended diagnostics
 	userDetails := models.Users[username]
 	userDetails.Token = accessToken
 	userDetails.LoggedIn = true // TODO think about cookie expiry and refresh
@@ -239,5 +240,10 @@ func ServerRegister(username string, password string) (gin.H, error) {
 	}
 
 	log.Output(1, fmt.Sprintf(" Registered user %s \n", username))
+
+	// add the user to our local database, flagged as not logged in and with empty token.
+	// server will do the same so this is just a mirror of the server entry.
+	new_user := models.UserData{LoggedIn: false, UserName: username, Token: ""}
+	models.Users[username] = &new_user
 	return gin.H{"message": "Registration succeeded. Please log in"}, nil
 }
