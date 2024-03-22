@@ -22,8 +22,8 @@ var URLheader string
 // TODO put these into an env file
 var SECRET_ADMIN_PASSWORD string = "insecure"
 
-// var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
-var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
+var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
+// var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
 
 //Force heroku update
 
