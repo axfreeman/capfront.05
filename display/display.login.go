@@ -102,7 +102,7 @@ func HandleLoginRequest(ctx *gin.Context) {
 // Compose and send a request to the server to log in.
 // This seems very laborious, more likely than not unnecessarily so.
 // That's because it is a learning project for me.
-
+//
 // This function can be called either by the client (this project) using
 // data entered by the user via the login form.
 // OR can be generated internally, for example to log in to the server
@@ -111,6 +111,7 @@ func ServerLogin(username string, password string) (gin.H, error) {
 	apiUrl := auth.APISOURCE + `auth/login`
 	client := http.Client{Timeout: time.Second * 2}
 	serverpayload := `username=` + username + `&password=` + password
+	var serverRequest *http.Request
 	serverRequest, err := http.NewRequest(http.MethodPost, apiUrl, strings.NewReader(serverpayload))
 	if err != nil {
 		return map[string]any{"loggedinstatus": false, "message": excuses["client"].apologize(err)}, errors.New("login failed")
