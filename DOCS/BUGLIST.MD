@@ -33,3 +33,5 @@
 * complete admin dashboard  
 * check user didn't select non-existent individual item via the browser eg choose non-existent commodity 
 * Switch gin to production mode
+* Users should have a facility to resynchronise with the server. This is needed if, for example, the server has restarted (or reset) since their last login.
+alternatively, the user should force resynchronise with each login (at present, we merely reconnect with the front end)  
