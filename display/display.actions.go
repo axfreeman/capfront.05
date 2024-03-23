@@ -41,7 +41,16 @@ func ActionHandler(ctx *gin.Context) {
 	log.Output(1, fmt.Sprintf("User %s wants the server to do %s\n", username, act))
 	log.Output(1, fmt.Sprintf("Last visited page %s", lastVisitedPage))
 	auth.ProtectedResourceServerRequest(username, act, `action/`+act)
-	api.Refresh(ctx, username)
+
+	// The action was taken. Now refresh from the server
+
+	if !api.Refresh(ctx, username) {
+		log.Output(1, "Warning: refresh was incomplete")
+		ctx.HTML(http.StatusOK, "errors.html", gin.H{
+			"message": "The action was done but we failed to retrieve all the data from the server",
+		})
+	}
+
 	// TODO use the state information supplied by the server - this code duplicates the server's prerogative
 	user := models.Users[username]
 	switch act {
@@ -75,10 +84,10 @@ func ActionHandler(ctx *gin.Context) {
 	// v := visitedPageURL[0]
 	if lastVisitedPage == `/commodities` || lastVisitedPage == `/industries` || lastVisitedPage == `/classes` || lastVisitedPage == `/stocks` {
 		fmt.Print("redirection")
-		ctx.Redirect(http.StatusFound, lastVisitedPage)
+		ctx.Redirect(http.StatusMovedPermanently, lastVisitedPage)
 	} else {
 		fmt.Print("not redirecting")
-		ctx.Redirect(http.StatusFound, "/index")
+		ctx.Redirect(http.StatusMovedPermanently, "/index")
 	}
 	// //TODO set time stamp
 	// TODO why don't the log statements (or their println equivalents) produce any output?
@@ -97,7 +106,12 @@ func CreateSimulation(ctx *gin.Context) {
 		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
 		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
 	}
+	if !api.Refresh(ctx, username) {
+		log.Output(1, "Warning: refresh was incomplete")
+		ctx.HTML(http.StatusOK, "errors.html", gin.H{
+			"message": "Warning: we created this simulation but failed to retrieve all the data from the server",
+		})
+	}
 
-	api.Refresh(ctx, username)
 	ShowIndexPage(ctx)
 }

@@ -38,8 +38,10 @@ var ApiList = [9]ApiItem{
 
 // Iterates through ApiList to refresh all objects owned by the user
 // from the remote server, by invoking FetchAPI.
+// returns False if any table failed.
+// returns True if all tables succeeded.
 // TODO ctx is not needed.
-func Refresh(ctx *gin.Context, username string) {
+func Refresh(ctx *gin.Context, username string) bool {
 	for i := range ApiList {
 		a := ApiList[i]
 		if !FetchAPI(&a, username) {
@@ -47,10 +49,11 @@ func Refresh(ctx *gin.Context, username string) {
 			// there has been a login failure or the server is down.
 			// TODO handle this so the caller knows something went wrong.
 			fmt.Println("Cannot refresh from remote server; giving up")
-			return
+			return false
 		}
 	}
 	log.Output(1, "Refresh complete")
+	return true
 }
 
 // fetch the data specified by item for user.

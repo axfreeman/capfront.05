@@ -15,7 +15,7 @@ import (
 func ShowIndustryStocks(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -33,7 +33,7 @@ func ShowIndustryStocks(ctx *gin.Context) {
 func ShowClassStocks(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -23,52 +24,71 @@ import (
 func userStatus(ctx *gin.Context) (string, bool, error) {
 	var loginStatus bool = false
 
+	// Diagnostics - find out who called us
+
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("userStatus was called from %s#%d\n", file, no)
+	}
+
 	// find out what the browser knows
 
 	username, err := auth.Get_current_user(ctx)
 	if err != nil {
 		log.Printf("The client browser knows nothing about user %s", username)
 		return "unknown", false, err
-	} else {
+	}
 
-		// find out what the server knows
+	// find out what the server knows
 
-		synched_user := models.UserServerData{}
-		body, err := auth.ProtectedResourceServerRequest(username, "Synchronise with server", `users/`+username)
-		if err != nil {
-			log.Printf("The server knows nothing about user %s", username)
-			return username, false, err
-		}
+	synched_user := models.UserServerData{}
+	body, err := auth.ProtectedResourceServerRequest(username, "Synchronise with server", `users/`+username)
+	if err != nil {
+		log.Printf("The server knows nothing about user %s", username)
+		return username, false, err
+	}
 
-		err = json.Unmarshal(body, &synched_user)
+	err = json.Unmarshal(body, &synched_user)
 
-		// the server knows something
+	// the server knows something
 
-		if err != nil {
-			log.Printf("The server failed to inform us about user %s", username)
-			ctx.Redirect(http.StatusFound, "/login")
-			// TODO tell the user why she is being asked to log in again
-			// TODO provide option to register
-			return username, false, err
-		} else
+	if err != nil {
+		log.Printf("The server failed to inform us about user %s", username)
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		// TODO tell the user why she is being asked to log in again
+		return username, false, err
+	}
 
-		// We agree with the server that this user can log in.
-		// Now synch with the server in case something changed
+	// Ask the server whether it accepts that the user is logged in
+	log.Printf("The server knows about user %s - ask if we are logged in", username)
 
-		{
+	if !synched_user.Is_logged_in {
+		log.Printf("User %s is not logged in at the server", username)
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		// TODO tell the user why she is being asked to log in again
+		return username, false, err
+	}
 
-			if models.Users[username].CurrentSimulation != synched_user.CurrentSimulation {
-				log.Printf("We are out of synch. Server thinks our simulation is %d and client says it is %d",
-					synched_user.CurrentSimulation,
-					models.Users[username].CurrentSimulation)
-				api.Refresh(ctx, username)
+	log.Printf("The server knows about user %s and says it is logged in", username)
+
+	// We agree with the server that this user can log in.
+	// Now synch with the server in case something changed
+	{
+		if models.Users[username].CurrentSimulation != synched_user.CurrentSimulation {
+			log.Printf("We are out of synch. Server thinks our simulation is %d and client says it is %d",
+				synched_user.CurrentSimulation,
+				models.Users[username].CurrentSimulation)
+			if !api.Refresh(ctx, username) {
+				log.Printf("We don't have a token. Redirecting to login")
+				ctx.Redirect(http.StatusMovedPermanently, "/login")
+				return username, false, nil
 			}
-
-			models.Users[username].LastVisitedPage = ctx.Request.URL.Path
-			models.Users[username].CurrentSimulation = synched_user.CurrentSimulation
-			loginStatus = models.Users[username].LoggedIn
-			return username, loginStatus, err
 		}
+
+		models.Users[username].LastVisitedPage = ctx.Request.URL.Path
+		models.Users[username].CurrentSimulation = synched_user.CurrentSimulation
+		loginStatus = models.Users[username].LoggedIn
+		return username, loginStatus, err
 	}
 }
 
@@ -110,7 +130,7 @@ func set_current_state(username string, new_state string) {
 func ShowCommodities(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -128,7 +148,7 @@ func ShowCommodities(ctx *gin.Context) {
 func ShowIndustries(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -146,7 +166,7 @@ func ShowIndustries(ctx *gin.Context) {
 func ShowClasses(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -163,7 +183,7 @@ func ShowClasses(ctx *gin.Context) {
 func ShowCommodity(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -187,7 +207,7 @@ func ShowCommodity(ctx *gin.Context) {
 func ShowIndustry(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -211,7 +231,7 @@ func ShowIndustry(ctx *gin.Context) {
 func ShowClass(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -234,9 +254,10 @@ func ShowClass(ctx *gin.Context) {
 // Displays snapshot of the economy
 // TODO parameterise the templates to reduce boilerplate
 func ShowIndexPage(ctx *gin.Context) {
+	fmt.Printf("Show Index Page was called")
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 	state := get_current_state(username)
@@ -259,7 +280,7 @@ func ShowIndexPage(ctx *gin.Context) {
 func ShowTrace(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -280,9 +301,16 @@ func ShowTrace(ctx *gin.Context) {
 // Retrieve all templates, and all simulations belonging to this user, from the local database
 // Display them in the user dashboard
 func UserDashboard(ctx *gin.Context) {
+
+	// TODO Diagnostics only - probably remove this in production version.
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("User Dashboard was called from %s#%d\n", file, no)
+	}
+
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -311,7 +339,7 @@ func DataHandler(ctx *gin.Context) {
 func SwitchSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -325,7 +353,7 @@ func SwitchSimulation(ctx *gin.Context) {
 func DeleteSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
@@ -339,7 +367,7 @@ func DeleteSimulation(ctx *gin.Context) {
 func RestartSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
