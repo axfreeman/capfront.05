@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -61,6 +62,15 @@ func HandleLoginRequest(ctx *gin.Context) {
 	username := clientRequest.Form["username"][0]
 	password := clientRequest.Form["password"][0]
 	serverPayload, err := ServerLogin(username, password)
+
+	// TODO diagnostics only - delete in production version.
+	fmt.Printf("HandleLoginRequest was called")
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("HandleLoginRequest was called from %s#%d\n", file, no)
+	} else {
+		fmt.Printf("Could not diagnose where login request was called from")
+	}
 
 	if err != nil { // something went wrong; tell the developer and tell the user
 		message := fmt.Sprintf("%s", serverPayload["message"])

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,13 @@ import (
 // sets 'LastVisitedPage' so we can return here after an action
 func userStatus(ctx *gin.Context) (string, bool, error) {
 	var loginStatus bool = false
+
+	// Diagnostics - find out who called us
+
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("userStatus was called from %s#%d\n", file, no)
+	}
 
 	// find out what the browser knows
 
@@ -240,6 +248,7 @@ func ShowClass(ctx *gin.Context) {
 // Displays snapshot of the economy
 // TODO parameterise the templates to reduce boilerplate
 func ShowIndexPage(ctx *gin.Context) {
+	fmt.Printf("Show Index Page was called")
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
 		ctx.Redirect(http.StatusFound, "/login")
@@ -286,6 +295,13 @@ func ShowTrace(ctx *gin.Context) {
 // Retrieve all templates, and all simulations belonging to this user, from the local database
 // Display them in the user dashboard
 func UserDashboard(ctx *gin.Context) {
+
+	// TODO Diagnostics only - probably remove this in production version.
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("User Dashboard was called from %s#%d\n", file, no)
+	}
+
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
 		ctx.Redirect(http.StatusFound, "/login")
