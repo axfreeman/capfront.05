@@ -103,9 +103,9 @@ func HandleLoginRequest(ctx *gin.Context) {
 
 	// display the appropriate dashboard.
 	if username == "admin" {
-		ctx.Redirect(http.StatusFound, "/admin/dashboard")
+		ctx.Redirect(http.StatusMovedPermanently, "/admin/dashboard")
 	} else {
-		ctx.Redirect(http.StatusFound, "/user/dashboard")
+		ctx.Redirect(http.StatusMovedPermanently, "/user/dashboard")
 	}
 }
 
@@ -199,7 +199,7 @@ func HandleRegisterRequest(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.Redirect(http.StatusFound, "/login")
+	ctx.Redirect(http.StatusMovedPermanently, "/login")
 
 }
 

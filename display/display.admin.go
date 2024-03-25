@@ -17,7 +17,7 @@ import (
 func AdminDashboard(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusFound, "/login")
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
 		return
 	}
 
