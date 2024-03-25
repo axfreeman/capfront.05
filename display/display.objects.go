@@ -48,15 +48,21 @@ func userStatus(ctx *gin.Context) (string, bool, error) {
 			log.Printf("The server failed to inform us about user %s", username)
 			ctx.Redirect(http.StatusFound, "/login")
 			// TODO tell the user why she is being asked to log in again
-			// TODO provide option to register
 			return username, false, err
 		} else
 
+		// Ask the server whether it accepts that the user is logged in
+
+		if !synched_user.Is_logged_in {
+			log.Printf("User %s is not logged in at the server", username)
+			ctx.Redirect(http.StatusFound, "/login")
+			// TODO tell the user why she is being asked to log in again
+			return username, false, err
+		}
+
 		// We agree with the server that this user can log in.
 		// Now synch with the server in case something changed
-
 		{
-
 			if models.Users[username].CurrentSimulation != synched_user.CurrentSimulation {
 				log.Printf("We are out of synch. Server thinks our simulation is %d and client says it is %d",
 					synched_user.CurrentSimulation,
