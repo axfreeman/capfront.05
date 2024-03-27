@@ -13,7 +13,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
 
@@ -61,44 +60,59 @@ func HandleLoginRequest(ctx *gin.Context) {
 	clientRequest.ParseForm()
 	username := clientRequest.Form["username"][0]
 	password := clientRequest.Form["password"][0]
+	//TODO
 	serverPayload, err := ServerLogin(username, password)
 
-	// TODO diagnostics only - delete in production version.
-	fmt.Printf("HandleLoginRequest was called")
-	_, file, no, ok := runtime.Caller(1)
-	if ok {
-		fmt.Printf("HandleLoginRequest was called from %s#%d\n", file, no)
-	} else {
-		fmt.Printf("Could not diagnose where login request was called from")
+	rerouteMessage := gin.H{
+		"message": "Could not log you in",
+		"advice":  "Please try again",
+		"info":    "Or ask me to register you",
 	}
 
-	if err != nil { // something went wrong; tell the developer and tell the user
+	if err != nil {
+		// something went wrong; tell the developer and tell the user
 		message := fmt.Sprintf("%s", serverPayload["message"])
 		log.Output(1, message)
-		ctx.HTML(http.StatusOK, "login.html", gin.H{
-			"message": "Could not log you in",
-			"advice":  "Please try again",
-			"info":    "Or ask me to register you",
-		})
+		ctx.HTML(http.StatusOK, "login.html", rerouteMessage)
 		return
 	}
 
 	// register the user name as a cookie in the user browser
-	// TODO fix up SameSite, wrong domain error, etc
-	ctx.SetCookie("User", username, 34560000, "/", auth.APISOURCE, false, false)
-	api.Refresh(ctx, username) // refresh the user's tables from the server at first login
+	ctx.SetCookie("User", username, 34560000, "/", "", false, false)
+
+	// First login.
+	// Wipe the History slate.
+	// Create a new HistoryItem for the user and try to populate it from the server.
+	// If we fail it's because the user hasn't started any simulations, so just carry on.
+	// When the user clones a simulation, it will independently reinitialise the History
+
+	userRecord := models.Users[username]
+	userRecord.ReInitialize()
 
 	// Refresh user status from the server (which simulations we are using, etc)
 	// TODO remove silly confusion between client URL 'user/' and server URL 'users/'
 	body, _ := auth.ProtectedResourceServerRequest(username, " get user details ", `users/`+username)
+
 	jsonErr := json.Unmarshal(body, &models.UserServerItem)
 
-	if jsonErr != nil { // We couldn't understand the server's response
-		// TODO display the error standardly as above and logout
+	// We couldn't understand the server's response
+	if jsonErr != nil {
 		log.Output(1, "Failed to obtain user details for logged in user - cannot set current simulation right now")
+		ctx.HTML(http.StatusMovedPermanently, "login.html", rerouteMessage)
+		return
 	} else {
 		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
 		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
+	}
+
+	// Try to refresh from server
+	if !api.Refresh(ctx, username) {
+		// we couldn't but that might be because we have no simulations
+		if userRecord.CurrentSimulation != 0 {
+			log.Output(1, fmt.Sprintf("Could not refresh user %s from the server\n", username))
+			ctx.HTML(http.StatusMovedPermanently, "login.html", rerouteMessage)
+			return
+		}
 	}
 
 	// display the appropriate dashboard.
@@ -152,6 +166,8 @@ func ServerLogin(username string, password string) (gin.H, error) {
 	accessToken := target["access_token"]
 	log.Output(1, fmt.Sprintf(" Logged in user %s \n", username))
 	auth.PrintUsers() // Comment in for extended diagnostics
+
+	//TODO
 	userDetails := models.Users[username]
 	userDetails.Token = accessToken
 	userDetails.LoggedIn = true // TODO think about cookie expiry and refresh
@@ -254,7 +270,8 @@ func ServerRegister(username string, password string) (gin.H, error) {
 
 	// add the user to our local database, flagged as not logged in and with empty token.
 	// server will do the same so this is just a mirror of the server entry.
-	new_user := models.UserData{LoggedIn: false, UserName: username, Token: ""}
+	// TODO factory function to initialize a new user
+	new_user := models.UserData{LoggedIn: false, ViewedTimeStamp: 1, UserName: username, Token: ""}
 	models.Users[username] = &new_user
 	return gin.H{"message": "Registration succeeded. Please log in"}, nil
 }

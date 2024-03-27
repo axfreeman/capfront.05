@@ -99,10 +99,11 @@ func get_current_state(username string) string {
 	if this_user == nil {
 		return "NO SIMULATION YET"
 	}
-	this_simulation_id := this_user.CurrentSimulation
-	for i := 0; i < len(this_user.SimulationList); i++ {
-		s := this_user.SimulationList[i]
-		if s.Id == this_simulation_id {
+	id := this_user.CurrentSimulation
+	sims := *this_user.Simulations()
+	for i := 0; i < len(sims); i++ {
+		s := sims[i]
+		if s.Id == id {
 			return s.State
 		}
 	}
@@ -113,15 +114,16 @@ func get_current_state(username string) string {
 // if we fail it's a programme error so we don't test for that
 func set_current_state(username string, new_state string) {
 	this_user := models.Users[username]
-	this_simulation_id := this_user.CurrentSimulation
+	id := this_user.CurrentSimulation
+	sims := *this_user.Simulations()
 	log.Output(1, fmt.Sprintf("resetting state to %s for user %s", new_state, this_user.UserName))
-	for i := 0; i < len(this_user.SimulationList); i++ {
-		s := &this_user.SimulationList[i]
-		if (*s).Id == this_simulation_id {
+	for i := 0; i < len(sims); i++ {
+		s := &sims[i]
+		if (*s).Id == id {
 			(*s).State = new_state
 			return
 		}
-		log.Output(1, fmt.Sprintf("simulation with id %d not found", this_simulation_id))
+		log.Output(1, fmt.Sprintf("simulation with id %d not found", id))
 	}
 }
 
@@ -137,7 +139,7 @@ func ShowCommodities(ctx *gin.Context) {
 
 	ctx.HTML(http.StatusOK, "commodities.html", gin.H{
 		"Title":          "Commodities",
-		"commodities":    models.Users[username].CommodityList,
+		"commodities":    models.Users[username].Commodities(),
 		"username":       username,
 		"loggedinstatus": loginStatus,
 		"state":          state,
@@ -155,7 +157,7 @@ func ShowIndustries(ctx *gin.Context) {
 	state := get_current_state(username)
 	ctx.HTML(http.StatusOK, "industries.html", gin.H{
 		"Title":          "Industries",
-		"industries":     models.Users[username].IndustryList,
+		"industries":     models.Users[username].Industries(),
 		"username":       username,
 		"loggedinstatus": loginStatus,
 		"state":          state,
@@ -172,7 +174,7 @@ func ShowClasses(ctx *gin.Context) {
 	state := get_current_state(username)
 	ctx.HTML(http.StatusOK, "classes.html", gin.H{
 		"Title":          "Classes",
-		"classes":        models.Users[username].ClassList,
+		"classes":        models.Users[username].Classes(),
 		"username":       username,
 		"loggedinstatus": loginStatus,
 		"state":          state,
@@ -190,11 +192,15 @@ func ShowCommodity(ctx *gin.Context) {
 	state := get_current_state(username)
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.Users[username].CommodityList); i++ {
-		if id == models.Users[username].CommodityList[i].Id {
+	// id := this_user.CurrentSimulation
+	// sims := *this_user.Simulations()
+
+	clist := *models.Users[username].Commodities()
+	for i := 0; i < len(clist); i++ {
+		if id == clist[i].Id {
 			ctx.HTML(http.StatusOK, "commodity.html", gin.H{
 				"Title":          "Commodity",
-				"commodity":      models.Users[username].CommodityList[i],
+				"commodity":      clist[i],
 				"username":       username,
 				"loggedinstatus": loginStatus,
 				"state":          state,
@@ -214,11 +220,12 @@ func ShowIndustry(ctx *gin.Context) {
 	state := get_current_state(username)
 	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.Users[username].IndustryList); i++ {
-		if id == models.Users[username].IndustryList[i].Id {
+	ilist := *models.Users[username].Industries()
+	for i := 0; i < len(ilist); i++ {
+		if id == ilist[i].Id {
 			ctx.HTML(http.StatusOK, "industry.html", gin.H{
 				"Title":          "Industry",
-				"industry":       models.Users[username].IndustryList[i],
+				"industry":       ilist[i],
 				"username":       username,
 				"loggedinstatus": loginStatus,
 				"state":          state,
@@ -238,11 +245,13 @@ func ShowClass(ctx *gin.Context) {
 	state := get_current_state(username)
 	id, _ := strconv.Atoi(ctx.Param("id")) //TODO check user didn't do something stupid
 	// TODO here and elsewhere create a method to get the simulation
-	for i := 0; i < len(models.Users[username].ClassList); i++ {
-		if id == models.Users[username].ClassList[i].Id {
+	list := *models.Users[username].Classes()
+
+	for i := 0; i < len(list); i++ {
+		if id == list[i].Id {
 			ctx.HTML(http.StatusOK, "class.html", gin.H{
 				"Title":          "Class",
-				"class":          models.Users[username].ClassList[i],
+				"class":          list[i],
 				"username":       username,
 				"loggedinstatus": loginStatus,
 				"state":          state,
@@ -263,13 +272,18 @@ func ShowIndexPage(ctx *gin.Context) {
 	state := get_current_state(username)
 
 	api.UserMessage = `This is the home page`
+
+	clist := *models.Users[username].Commodities()
+	ilist := *models.Users[username].Industries()
+	cllist := *models.Users[username].Classes()
+
 	ctx.HTML(http.StatusOK, "index.html", gin.H{
 		"Title":          "Economy",
-		"industries":     models.Users[username].IndustryList,
-		"commodities":    models.Users[username].CommodityList,
+		"industries":     ilist,
+		"commodities":    clist,
 		"Message":        models.Users[username].UserMessage.Message,
 		"DisplayOptions": models.Quantity,
-		"classes":        models.Users[username].ClassList,
+		"classes":        cllist,
 		"username":       username,
 		"loggedinstatus": loginStatus,
 		"state":          state,
@@ -285,12 +299,14 @@ func ShowTrace(ctx *gin.Context) {
 	}
 
 	state := get_current_state(username)
+	tlist := *models.Users[username].Traces()
+
 	ctx.HTML(
 		http.StatusOK,
 		"trace.html",
 		gin.H{
 			"Title":          "Simulation Trace",
-			"trace":          models.Users[username].TraceList,
+			"trace":          tlist,
 			"username":       username,
 			"loggedinstatus": loginStatus,
 			"state":          state,
@@ -315,9 +331,11 @@ func UserDashboard(ctx *gin.Context) {
 	}
 
 	state := get_current_state(username)
+	slist := *models.Users[username].Simulations()
+
 	ctx.HTML(http.StatusOK, "user-dashboard.html", gin.H{
 		"Title":          "Dashboard",
-		"simulations":    models.Users[username].SimulationList,
+		"simulations":    slist,
 		"templates":      models.TemplateList,
 		"username":       username,
 		"loggedinstatus": loginStatus,
@@ -375,5 +393,45 @@ func RestartSimulation(ctx *gin.Context) {
 	log.Output(1, fmt.Sprintf("User %s wants to restart simulation %d", username, id))
 	ctx.HTML(http.StatusOK, "notready.html", gin.H{
 		"Title": "Not Ready",
+	})
+}
+
+// display all industry stocks in the current simulation
+func ShowIndustryStocks(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		return
+	}
+
+	state := get_current_state(username)
+	islist := *models.Users[username].IndustryStocks()
+
+	ctx.HTML(http.StatusOK, "industry_stocks.html", gin.H{
+		"Title":          "Industry Stocks",
+		"stocks":         islist,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
+	})
+}
+
+// display all the class stocks in the current simulation
+func ShowClassStocks(ctx *gin.Context) {
+	username, loginStatus, _ := userStatus(ctx)
+	if !loginStatus {
+		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		return
+	}
+
+	state := get_current_state(username)
+	cslist := *models.Users[username].ClassStocks()
+
+	ctx.HTML(http.StatusOK, "class_stocks.html", gin.H{
+		"Title":          "Class Stocks",
+		"stocks":         cslist,
+		"username":       username,
+		"loggedinstatus": loginStatus,
+		"state":          state,
 	})
 }

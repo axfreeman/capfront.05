@@ -106,6 +106,11 @@ func CreateSimulation(ctx *gin.Context) {
 		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
 		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
 	}
+
+	// Wipe the History clean and populate the first HistoryItem
+	userRecord := models.Users[username]
+	userRecord.ReInitialize()
+	userRecord.ViewedTimeStamp = 0
 	if !api.Refresh(ctx, username) {
 		log.Output(1, "Warning: refresh was incomplete")
 		ctx.HTML(http.StatusOK, "errors.html", gin.H{

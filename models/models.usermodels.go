@@ -3,6 +3,10 @@
 
 package models
 
+import (
+	"encoding/json"
+)
+
 const (
 	Quantity = iota
 	Value
@@ -11,21 +15,80 @@ const (
 
 // Full details of a user
 // NOTE we do not store the password - this is handled by the remote server
+// TODO factory function to initialize a new user
 type UserData struct {
-	Token             string       // The access token to use when requesting access to protected resources
-	UserName          string       // Repeats the key in the map, which makes it easier to place in the admin dashboard template
-	CurrentSimulation int          // the id of the simulation that this user is currently using
-	UserMessage       *UserMessage // store for messages to be displayed to the user when appropriate
-	LoggedIn          bool         // Is this user logged in?
-	LastVisitedPage   string       // Remember what the user was looking at (used when an action is requested)
-	DisplayOption     string       // price, value or size TODO make this type-safe? Probably overkill
-	SimulationList    []Simulation // all the simulations this user has created
-	CommodityList     []Commodity  // all the commodity objects this user has created
-	IndustryList      []Industry   // ...
-	ClassList         []Class
-	IndustryStockList []Industry_Stock
-	ClassStockList    []Class_Stock
-	TraceList         []Trace
+	Token             string              // The access token to use when requesting access to protected resources
+	UserName          string              // Repeats the key in the map, which makes it easier to place in the admin dashboard template
+	CurrentSimulation int                 // the id of the simulation that this user is currently using
+	UserMessage       *UserMessage        // store for messages to be displayed to the user when appropriate
+	LoggedIn          bool                // Is this user logged in?
+	LastVisitedPage   string              // Remember what the user was looking at (used when an action is requested)
+	ViewedTimeStamp   int                 // Indexes the History field. Selects what the user is viewing
+	History           map[int]HistoryItem // the history of the current simulation
+}
+
+func (u UserData) Contents() string {
+	b, _ := json.MarshalIndent(u.History, "", " ")
+	return string(b)
+}
+
+// wipe the history clean and create a single new HistoryItem
+func (u UserData) ReInitialize() {
+	u.History = make(map[int]HistoryItem)
+	u.History[0] = HistoryItem{Time_stamp: 0}
+}
+
+// Wrappers for the various lists
+// TODO implement all this with an interface
+
+// Wrapper for the SimulationList
+func (u UserData) Simulations() *[]Simulation {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	// return &u.History[u.ViewedTimeStamp].SimulationList //TODO why can't I do
+	return &h.SimulationList
+}
+
+// Wrapper for the CommodityList
+func (u UserData) Commodities() *[]Commodity {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.CommodityList
+}
+
+// Wrapper for the IndustryList
+func (u UserData) Industries() *[]Industry {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.IndustryList
+}
+
+// Wrapper for the ClassList
+func (u UserData) Classes() *[]Class {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.ClassList
+}
+
+// Wrapper for the IndustryStockList
+func (u UserData) IndustryStocks() *[]Industry_Stock {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.IndustryStockList
+}
+
+// Wrapper for the ClassStockList
+func (u UserData) ClassStocks() *[]Class_Stock {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.ClassStockList
+}
+
+// Wrapper for the TraceList
+func (u UserData) Traces() *[]Trace {
+	var v int = u.ViewedTimeStamp
+	var h HistoryItem = u.History[v]
+	return &h.TraceList
 }
 
 // Format of responses from the server for post requests

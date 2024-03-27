@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,18 +37,14 @@ var ApiList = [9]ApiItem{
 	{`trace`, `trace/`},
 }
 
-// Iterates through ApiList to refresh all objects owned by the user
-// from the remote server, by invoking FetchAPI.
-// returns False if any table failed.
-// returns True if all tables succeeded.
-// TODO ctx is not needed.
+// Iterates through ApiList to refresh all user objects.
+// Omits the first two items in the table which are reserved for admin user
+// Returns false if any table fails.
+// Returns true if all tables succeed.
 func Refresh(ctx *gin.Context, username string) bool {
-	for i := range ApiList {
+	for i := 2; i < len(ApiList); i++ {
 		a := ApiList[i]
 		if !FetchAPI(&a, username) {
-			// If one fetch fails, there is no point continuing because
-			// there has been a login failure or the server is down.
-			// TODO handle this so the caller knows something went wrong.
 			fmt.Println("Cannot refresh from remote server; giving up")
 			return false
 		}
@@ -60,35 +57,72 @@ func Refresh(ctx *gin.Context, username string) bool {
 // if we got something, return true.
 // if not, for whatever reason, return false.
 func FetchAPI(item *ApiItem, username string) (result bool) {
-	body, _ := auth.ProtectedResourceServerRequest(username, "Fetch Table", item.ApiUrl)
-	// Check for an empty result.
-	// This can happen, but we need to know it did.
-	if string(body) == `[]` {
-		fmt.Println("The result was an empty table")
-		return false
+	fmt.Printf("User %s asked to fetch the table named %s\n", username, item.ApiUrl)
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf("fetch API was called from %s#%d\n", file, no)
 	}
+
+	body, _ := auth.ProtectedResourceServerRequest(username, "Fetch Table", item.ApiUrl)
+	// Check for an empty result. Not necessarily an error but useful to know.
+	if body[0] == 91 && body[1] == 93 {
+		log.Output(1, "INFORMATION: The server sent an empty table")
+	}
+
+	// more detailed diagnostics. Comment in production version
+	fmt.Printf("The server sent %s\n", string(body))
 	var jsonErr error
-	switch item.Name {
-	case `template`:
-		jsonErr = json.Unmarshal(body, &models.TemplateList)
-	case `users`:
-		jsonErr = json.Unmarshal(body, &models.AdminUserList)
-	case `simulation`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].SimulationList)
-	case `commodity`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].CommodityList)
-	case `industry`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].IndustryList)
-	case `class`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].ClassList)
-	case `industry_stock`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].IndustryStockList)
-	case `class_stock`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].ClassStockList)
-	case `trace`:
-		jsonErr = json.Unmarshal(body, &models.Users[username].TraceList)
-	default:
-		log.Output(1, fmt.Sprintf("Unknown dataset%s ", item.Name))
+
+	var v int = models.Users[username].ViewedTimeStamp
+	var hlist = models.Users[username].History
+
+	// TODO this is a bodge. We need some separate method to get the Template and Userlists
+	if username == `admin` {
+		// The admin wants to populate the global template and user lists
+		switch item.Name {
+		case `template`:
+			jsonErr = json.Unmarshal(body, &models.TemplateList)
+		case `users`:
+			jsonErr = json.Unmarshal(body, &models.AdminUserList)
+		case `default`:
+			log.Fatal("Admin user did something it shouldn't")
+		}
+	} else {
+		h, ok := hlist[v]
+		// Check for programme error: if h does not exist, we did something wrong.
+		if !ok {
+			log.Output(1, "The application tried to populate a non-existent history item")
+			return
+		}
+		fmt.Printf("There are %d items in the History Map and the current Time Stamp is %d\n", len(hlist), v)
+		switch item.Name {
+		case `template`:
+			// THIS SHOULD NOT HAPPEN! But if it does, report it
+			log.Output(1, fmt.Sprintf("Non-admin user %s tried to populat the template list", username))
+			jsonErr = json.Unmarshal(body, &models.TemplateList)
+		case `users`:
+			// THIS SHOULD NOT HAPPEN! But if it does, report it
+			log.Output(1, fmt.Sprintf("Non-admin user %s tried to populat the template list", username))
+			jsonErr = json.Unmarshal(body, &models.AdminUserList)
+		case `simulation`:
+			jsonErr = json.Unmarshal(body, &h.SimulationList)
+		case `commodity`:
+			jsonErr = json.Unmarshal(body, &h.CommodityList)
+		case `industry`:
+			jsonErr = json.Unmarshal(body, &h.IndustryList)
+		case `class`:
+			jsonErr = json.Unmarshal(body, &h.ClassList)
+		case `industry_stock`:
+			jsonErr = json.Unmarshal(body, &h.IndustryStockList)
+		case `class_stock`:
+			jsonErr = json.Unmarshal(body, &h.ClassStockList)
+		case `trace`:
+			jsonErr = json.Unmarshal(body, &h.TraceList)
+		default:
+			log.Output(1, fmt.Sprintf("Unknown dataset%s ", item.Name))
+			return false
+		}
+
 	}
 	if jsonErr != nil {
 		log.Output(1, fmt.Sprintf("Failed to unmarshal template json because: %s", jsonErr))
@@ -96,8 +130,9 @@ func FetchAPI(item *ApiItem, username string) (result bool) {
 	}
 
 	// uncomment for verbose diagnostics
-	// fmt.Println("After loading, the models map for user guest is:")
-	// PrintUsers()
+	fmt.Printf("After loading, the models map for user %s is:", username)
+	fmt.Print(models.Users[username].History)
+	fmt.Println("")
 	return true
 }
 

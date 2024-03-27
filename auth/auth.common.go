@@ -49,7 +49,7 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	user, ok := models.Users[username]
 
 	if !ok {
-		log.Output(1, fmt.Sprintf("Attempt to access the server by non-existent user %s", username))
+		log.Output(1, fmt.Sprintf("User %s is not in the local database", username))
 		return nil, fmt.Errorf("user %s tried to access the server, but we don't have any record of that user", username)
 	}
 
@@ -100,8 +100,8 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 
 // utility function to diagnose errors in the list of users
 func PrintUsers() {
+	fmt.Println("List of users and their contents")
 	for key, value := range models.Users {
-		fmt.Println("List of users and their contents")
 		fmt.Printf("%s\t:%v\n", key, value)
 	}
 }

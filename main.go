@@ -26,11 +26,13 @@ func Initialise() {
 		log.Fatalf("Server failed at startup. It said:\n%v", serverPayload["message"])
 	}
 
+	// Get a list of templates from the server and put it in TemplateList
 	api.FetchAPI(&api.ApiList[0], "admin") // get templates
+
+	// Get a list of users from the server and put it in AdminUserList
 	api.FetchAPI(&api.ApiList[1], "admin") // get user details
-	// Copy the list we just downloaded into the UserList
-	// Can probably download directly into UserList
-	// but I wasn't sure how the unMarshalling would affect the nested arrays
+
+	// Build the UserData map from AdminUserList
 	for _, item := range models.AdminUserList {
 		user := models.UserData{LoggedIn: false, UserName: item.UserName, Token: ""}
 		models.Users[item.UserName] = &user
