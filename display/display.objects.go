@@ -263,7 +263,7 @@ func ShowClass(ctx *gin.Context) {
 // Displays snapshot of the economy
 // TODO parameterise the templates to reduce boilerplate
 func ShowIndexPage(ctx *gin.Context) {
-	fmt.Printf("Show Index Page was called")
+	fmt.Printf("Show Index Page was called\n")
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
 		ctx.Redirect(http.StatusMovedPermanently, "/login")
