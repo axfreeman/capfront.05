@@ -18,35 +18,23 @@ import (
 func Initialise() {
 	// err := gotdotenv.Load()                 // 👈 load .env file
 	auth.SECRET_ADMIN_PASSWORD = "insecure" // TODO get this from settings file
-	admin_user := models.UserData{LoggedIn: false, UserName: "admin", Token: ""}
+
+	// At startup, create an admin user record and authenticate it with the server.
+	// We assume there is an admin user on the server with the password used here.
+	admin_user := models.NewUserDatum(`admin`)
 	models.Users["admin"] = &admin_user
-	serverPayload, err := display.ServerLogin("admin", auth.SECRET_ADMIN_PASSWORD)
+	token, result := display.ServerLogin("admin", auth.SECRET_ADMIN_PASSWORD)
 
-	if err != nil {
-		log.Fatalf("Server failed at startup. It said:\n%v", serverPayload["message"])
+	if token == nil {
+		log.Fatalf("Server failed at startup. It said:\n%v", result)
 	}
 
-	api.FetchAPI(&api.ApiList[0], "admin") // get templates
-	api.FetchAPI(&api.ApiList[1], "admin") // get user details
-	// Copy the list we just downloaded into the UserList
-	// Can probably download directly into UserList
-	// but I wasn't sure how the unMarshalling would affect the nested arrays
-	for _, item := range models.AdminUserList {
-		user := models.UserData{LoggedIn: false, UserName: item.UserName, Token: ""}
-		models.Users[item.UserName] = &user
-	}
-	ListData()
-}
+	admin_user.Token = token.(string)
 
-// short diagnostic function to display user and template data
-func ListData() {
-	fmt.Printf("\nTemplateList has %d elements which are:\n", len(models.TemplateList))
-	for i := 0; i < len(models.TemplateList); i++ {
-		fmt.Println(models.TemplateList[i])
-	}
-	fmt.Printf("AdminUserList has %d elements which are:\n", len(models.AdminUserList))
-	for i := 0; i < len(models.AdminUserList); i++ {
-		fmt.Println(models.AdminUserList[i])
+	// Get a list of templates from the server and put it in TemplateList
+	// Get a list of users from the server and put it in AdminUserList
+	if !api.FetchAdminObjects() {
+		log.Fatal("Could not retrieve enough information from the server. Stopping")
 	}
 }
 

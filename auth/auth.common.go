@@ -41,16 +41,16 @@ func Get_current_user(ctx *gin.Context) (string, error) {
 }
 
 // Helper function to prepare and send a request for a protected service to the server
-// ctx is the context of a handler
-// username is the name of the user requesting the service
-// description is a user-friendly name for the action being requested, which is used to produce error messages
-// relativePath is appended to the URL of the remote server and tells the server what we want it to do
+//
+//	ctx is the context of a handler
+//	username is the name of the user requesting the service
+//	description is a user-friendly name for the action being requested, which is used to produce error messages
+//	relativePath is appended to the URL of the remote server and tells the server what we want it to do
 func ProtectedResourceServerRequest(username string, description string, relativePath string) ([]byte, error) {
 	user, ok := models.Users[username]
 
 	if !ok {
-		log.Output(1, fmt.Sprintf("Attempt to access the server by non-existent user %s", username))
-		return nil, fmt.Errorf("user %s tried to access the server, but we don't have any record of that user", username)
+		return nil, fmt.Errorf("user %s is not in the local database: request will not be passed to the server", username)
 	}
 
 	accessToken := user.Token
@@ -75,8 +75,6 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	client := &http.Client{Timeout: time.Second * 2} // Timeout after 2 seconds
 	res, _ := client.Do(resp)
 	if res == nil {
-		// Server failure
-		// TODO display nice error screen
 		log.Output(1, "Server is down or misbehaving")
 		return nil, nil
 	}
@@ -84,7 +82,6 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	if res.StatusCode != 200 {
 		log.Output(1, fmt.Sprintf("Server at URL %s rejected user %s's request '%s'. Status code was %s\n", relativePath, username, description, res.Status))
 		userMessage.StatusCode = http.StatusBadRequest
-		userMessage.Message = fmt.Sprintf("Server error %v ", err)
 		return nil, fmt.Errorf("could not access resource %s", description)
 	}
 
@@ -100,8 +97,8 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 
 // utility function to diagnose errors in the list of users
 func PrintUsers() {
+	fmt.Println("List of users and their contents")
 	for key, value := range models.Users {
-		fmt.Println("List of users and their contents")
 		fmt.Printf("%s\t:%v\n", key, value)
 	}
 }

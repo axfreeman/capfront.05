@@ -7,13 +7,12 @@ import (
 	"capfront/api"
 	"capfront/auth"
 	"capfront/models"
+	"capfront/utils"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
 
@@ -22,25 +21,20 @@ import (
 
 var genericAdvice = "Please contact the developer.\nPlease give as much information as you can, including the exact time this happened and the following message:\n"
 
-// container for building a user message
-type apology struct {
-	excuse string
-}
-
-// Generates an error report.
-// `a` is a container for the explanation
-// fault is the actual error
-func (a apology) apologize(fault error) error {
-	return fmt.Errorf(a.excuse+`%v`, fault)
-}
+// var rerouteMessage = gin.H{
+// 	"message": "Could not log you in",
+// 	"advice":  "Please try again",
+// 	"info":    "Or ask me to register you",
+// }
 
 // List of possible error messages to display to the user when needed
-var excuses = map[string]apology{
-	"client":   {"Sorry, there has been a programming error. " + genericAdvice},
-	"server":   {"Sorry, the server is down, or could not cope. " + genericAdvice},
-	"rejected": {"Sorry, the server is sulking. " + genericAdvice},
-	"narfy":    {"I'm afraid the server produced an incomprehensible response. " + genericAdvice},
-	"comms":    {"Sorry, I couldn't understand what the server said. " + genericAdvice},
+var excuses = map[string]string{
+	`client`:   `Sorry, there has been a programming error. ` + genericAdvice,
+	`server`:   `Sorry, the server is down, or could not cope. ` + genericAdvice,
+	`rejected`: `Sorry, the server did not accept this password. ` + genericAdvice,
+	`narfy`:    `I'm afraid the server produced an incomprehensible response. ` + genericAdvice,
+	`comms`:    `Sorry, I couldn't understand what the server said. ` + genericAdvice,
+	`success`:  `Success`,
 }
 
 var userMessage string
@@ -57,48 +51,55 @@ func CaptureLoginRequest(ctx *gin.Context) {
 // Service the form submitted when a user logs in.
 // Because of the setup, it merely passes the request to the backend server
 func HandleLoginRequest(ctx *gin.Context) {
+
+	// extract the user name and the password that were submitted on the form.
 	clientRequest := ctx.Request
 	clientRequest.ParseForm()
 	username := clientRequest.Form["username"][0]
 	password := clientRequest.Form["password"][0]
-	serverPayload, err := ServerLogin(username, password)
 
-	// TODO diagnostics only - delete in production version.
-	fmt.Printf("HandleLoginRequest was called")
-	_, file, no, ok := runtime.Caller(1)
-	if ok {
-		fmt.Printf("HandleLoginRequest was called from %s#%d\n", file, no)
-	} else {
-		fmt.Printf("Could not diagnose where login request was called from")
-	}
+	// ask the server to service this request and tell us the result
+	token, result := ServerLogin(username, password)
 
-	if err != nil { // something went wrong; tell the developer and tell the user
-		message := fmt.Sprintf("%s", serverPayload["message"])
-		log.Output(1, message)
-		ctx.HTML(http.StatusOK, "login.html", gin.H{
-			"message": "Could not log you in",
-			"advice":  "Please try again",
-			"info":    "Or ask me to register you",
-		})
+	if token == nil {
+		// Something went wrong; tell the user and offer some advice
+		utils.DisplayError(ctx, fmt.Sprintf("%v", excuses[result]))
 		return
 	}
 
 	// register the user name as a cookie in the user browser
-	// TODO fix up SameSite, wrong domain error, etc
-	ctx.SetCookie("User", username, 34560000, "/", auth.APISOURCE, false, false)
-	api.Refresh(ctx, username) // refresh the user's tables from the server at first login
+	ctx.SetCookie("User", username, 34560000, "/", "", false, false)
 
-	// Refresh user status from the server (which simulations we are using, etc)
-	// TODO remove silly confusion between client URL 'user/' and server URL 'users/'
-	body, _ := auth.ProtectedResourceServerRequest(username, " get user details ", `users/`+username)
-	jsonErr := json.Unmarshal(body, &models.UserServerItem)
-
-	if jsonErr != nil { // We couldn't understand the server's response
-		// TODO display the error standardly as above and logout
-		log.Output(1, "Failed to obtain user details for logged in user - cannot set current simulation right now")
+	// pick up the local user record from the Users list
+	userRecord, ok := models.Users[username]
+	if !ok {
+		// create a record if one does not exist
+		log.Output(1, fmt.Sprintf("Creating a new user record for user %s", username))
+		new_user := models.NewUserDatum(username)
+		models.Users[username] = &new_user
+		userRecord = models.Users[username]
 	} else {
-		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
-		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
+		log.Output(1, fmt.Sprintf("A user record already exists for user %s", username))
+	}
+
+	// Fill out user details from the server
+	body, _ := auth.ProtectedResourceServerRequest(username, "Get user details ", `users/`+username)
+	jsonErr := json.Unmarshal(body, &userRecord)
+
+	if jsonErr != nil {
+		// We couldn't understand the server's response
+		utils.DisplayError(ctx, "We couldn't get your user details from the server")
+		return
+	}
+	userRecord.Token = token.(string)
+
+	if len(userRecord.History) != 0 {
+		// Has the user already got a simulation going? If so, refresh it from the server.
+		if !api.FetchUserObjects(ctx, username) {
+			// In the unlikely case that the server authenticates this user but provides no data, tell the user.
+			utils.DisplayError(ctx, "We couldn't get your data from the server")
+			return
+		}
 	}
 
 	// display the appropriate dashboard.
@@ -110,52 +111,51 @@ func HandleLoginRequest(ctx *gin.Context) {
 }
 
 // Compose and send a request to the server to log in.
-// This seems very laborious, more likely than not unnecessarily so.
-// That's because it is a learning project for me.
 //
 // This function can be called either by the client (this project) using
-// data entered by the user via the login form.
-// OR can be generated internally, for example to log in to the server
-// as admin and get some information from it.
-func ServerLogin(username string, password string) (gin.H, error) {
+// data entered by the user via the login form, or generated internally,
+// to allow admin to retrieve information from the server.
+//
+//		username is the user supplied by the caller.
+//		password is the password supplied by the caller.
+//
+//		returns a token if login is successful, nil otherwise.
+//	  returns a string that summarises the result and indexes the 'excuses' list
+func ServerLogin(username string, password string) (json.Token, string) {
 	apiUrl := auth.APISOURCE + `auth/login`
 	client := http.Client{Timeout: time.Second * 2}
 	serverpayload := `username=` + username + `&password=` + password
-	var serverRequest *http.Request
-	serverRequest, err := http.NewRequest(http.MethodPost, apiUrl, strings.NewReader(serverpayload))
+	var req *http.Request
+	req, err := http.NewRequest(http.MethodPost, apiUrl, strings.NewReader(serverpayload))
 	if err != nil {
-		return map[string]any{"loggedinstatus": false, "message": excuses["client"].apologize(err)}, errors.New("login failed")
+		return nil, "client"
 	}
-	serverRequest.Header.Set("Authorization", "Basic Og==")
-	serverRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	res, err := client.Do(serverRequest)
+	req.Header.Set("Authorization", "Basic Og==")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res, err := client.Do(req)
 	if err != nil {
-		return map[string]any{"loggedinstatus": false, "message": excuses["server"].apologize(err)}, errors.New("login failed")
+		return nil, "server"
 	}
 
 	if res.StatusCode != 200 {
-		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("login failed")
+		return nil, "rejected"
 	}
 	defer res.Body.Close()
 
 	body, readErr := io.ReadAll(res.Body)
 	if readErr != nil {
-		return gin.H{"loggedinstatus": false, "message": excuses["narfy"].apologize(err)}, errors.New("login failed")
+		return nil, "narfy"
 	}
 
 	var target map[string]string // Receives the token from the server
 	jsonerr := json.Unmarshal(body, &target)
 	if jsonerr != nil {
-		return gin.H{"loggedinstatus": false, "message": excuses["comms"].apologize(err)}, errors.New("login failed")
+		return nil, "comms"
 	}
 
 	accessToken := target["access_token"]
-	log.Output(1, fmt.Sprintf(" Logged in user %s \n", username))
-	auth.PrintUsers() // Comment in for extended diagnostics
-	userDetails := models.Users[username]
-	userDetails.Token = accessToken
-	userDetails.LoggedIn = true // TODO think about cookie expiry and refresh
-	return gin.H{"loggedinstatus": true, "message": fmt.Sprintf("Logged in user %s\n", username)}, nil
+	log.Output(1, fmt.Sprintf("The server has logged in user %s \n", username))
+	return accessToken, fmt.Sprintf("Logged in user %s\n", username)
 }
 
 // logs the user out.
@@ -170,7 +170,7 @@ func ClientLogoutRequest(ctx *gin.Context) {
 	userDetails := models.Users[username]
 	auth.ProtectedResourceServerRequest(username, "Log out", `auth/logout`)
 	userDetails.Token = "invalid token"
-	userDetails.LoggedIn = false // TODO think about cookie expiry and refresh
+	userDetails.LoggedIn = false
 	CaptureLoginRequest(ctx)
 }
 
@@ -186,75 +186,55 @@ func HandleRegisterRequest(ctx *gin.Context) {
 	clientRequest.ParseForm()
 	username := clientRequest.Form["username"][0]
 	password := clientRequest.Form["password"][0]
-	serverPayload, err := ServerRegister(username, password) // Ask the server to do the heavy lifting
+	message, err := ServerRegister(username, password) // Ask the server to do the heavy lifting
 
 	if err != nil { // something went wrong; tell the developer and tell the user
-		message := fmt.Sprintf("%s", serverPayload["message"])
-		log.Output(1, message)
-		ctx.HTML(serverPayload["StatusCode"].(int), "login.html", gin.H{
-			"message": "The server didn't like this",
-			"advice":  "Please report this",
-			"info":    "Or ask me to register you",
-			"error":   err,
-		})
+		utils.DisplayError(ctx, message)
 		return
 	}
 	ctx.Redirect(http.StatusMovedPermanently, "/login")
-
 }
 
 // Compose and send a request to the server to register.
-// This seems very laborious, more likely than not unnecessarily so.
-// It also has a lot of boilerplate code that simply repeats what is
-// in CaptureLoginRequest().
-// That's because it is a learning project for me.
-// This function can be called either by the client (this project) using
-// data entered by the user via the login form.
-// OR can be generated internally, though I can't think of a user case for that.
-func ServerRegister(username string, password string) (gin.H, error) {
+func ServerRegister(username string, password string) (string, error) {
 	apiUrl := auth.APISOURCE + `auth/register`
 	client := http.Client{Timeout: time.Second * 2}
 	serverpayload := `username=` + username + `&password=` + password
 	serverRequest, err := http.NewRequest(http.MethodPost, apiUrl, strings.NewReader(serverpayload))
 	if err != nil {
-		return map[string]any{"loggedinstatus": false, "message": excuses["client"].apologize(err)}, errors.New("registration failed")
+		return "client", err
 	}
 	serverRequest.Header.Set("Authorization", "Basic Og==")
 	serverRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	print("Sending register request to server\n", serverpayload)
 	res, err := client.Do(serverRequest)
 	if err != nil {
-		return map[string]any{"loggedinstatus": false, "message": excuses["server"].apologize(err)}, fmt.Errorf("error%v", err)
+		return "server", err
 	}
 
 	if res.StatusCode != 200 {
-		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("registration request rejected")
+		return "rejected", err
 	}
 	defer res.Body.Close()
 
 	body, readErr := io.ReadAll(res.Body)
 	if readErr != nil {
-		return gin.H{"loggedinstatus": false, "message": excuses["narfy"].apologize(err)}, errors.New("registration failed")
+		return "narfy", readErr
 	}
 
 	var target models.ServerMessage // Receives the response from the server
 	jsonerr := json.Unmarshal(body, &target)
 	if jsonerr != nil {
-		return gin.H{"loggedinstatus": false, "message": excuses["comms"].apologize(err)}, errors.New("registration failed")
+		return "comms", jsonerr
 	}
 
-	log.Output(1, fmt.Sprintf(" The server response was %v with status code %d", target.Message, target.StatusCode))
-
 	if target.StatusCode != 200 {
-		log.Output(1, fmt.Sprintf(" Could not register user %s because the server said '%s'\n", username, target.Message))
-		return gin.H{"loggedinstatus": false, "message": excuses["rejected"].apologize(err)}, errors.New("registration request rejected")
+		return "rejected", jsonerr
 	}
 
 	log.Output(1, fmt.Sprintf(" Registered user %s \n", username))
 
-	// add the user to our local database, flagged as not logged in and with empty token.
-	// server will do the same so this is just a mirror of the server entry.
-	new_user := models.UserData{LoggedIn: false, UserName: username, Token: ""}
+	new_user := models.NewUserDatum(username)
 	models.Users[username] = &new_user
-	return gin.H{"message": "Registration succeeded. Please log in"}, nil
+	return "Registration succeeded. Please log in", nil
 }

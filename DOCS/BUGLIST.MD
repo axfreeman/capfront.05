@@ -21,4 +21,17 @@
 * Logout when browser closes (and clear cookie)  
 * Clear cookie when logging out  
 * Users should have a facility to resynchronise with the server. This is needed if, for example, the server has restarted (or reset) 
-since their last login. Alternatively, the user should force resynchronise with each login (at present, we merely reconnect with the front end)  
+since their last login. Alternatively, the user should force resynchronise with each login (at present, we merely reconnect with the front end) 
+* fix up SameSite behaviour with cookies
+
+
+# New branch to allow for a viewable History of the simulation
+* replace all calls to api.Refresh with a test to see if it failed and take appropriate action if it did
+* handle Refresh cannot complete loading condition.
+* LOGIN WITH BAD CREDENTIALS CREATES CRASH!!!!!!!!!!! (didn't do that before)
+* Remove silly confusion between client URL 'user/' and server URL 'users/'
+* Constructor function to initialize a new user
+* Login button on the error page
+* think about cookie expiry and refresh
+
+

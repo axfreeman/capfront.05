@@ -6,6 +6,7 @@ package display
 import (
 	"capfront/auth"
 	"capfront/models"
+	"capfront/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,9 +23,7 @@ func AdminDashboard(ctx *gin.Context) {
 	}
 
 	if username != "admin" {
-		ctx.HTML(http.StatusOK, "errors.html", gin.H{
-			"message": fmt.Errorf("only administrator can see the admin dashboard"),
-		})
+		utils.DisplayError(ctx, "Only the administrator can see the admin dashboard")
 		return
 	}
 	ctx.HTML(http.StatusOK, "admin-dashboard.html", gin.H{

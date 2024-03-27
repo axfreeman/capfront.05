@@ -44,3 +44,9 @@ This frontend works in conjunction with the backend that provides an API through
 I wanted a simple 'about' page to explain the project. This can be made more sophisticated as time goes on.
 
 * https://go.dev/doc/articles/wiki/ very simple basic
+
+# Initialising array structures
+We use quite a few structures in which arrays are sub-nested. Space has to be reserved for these nested arrays explicitly, so they have to be initialised.  
+
+* https://www.delftstack.com/howto/go/create-an-empty-slice-in-go/  
+* 

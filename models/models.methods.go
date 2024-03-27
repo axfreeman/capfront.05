@@ -76,7 +76,7 @@ var NotFoundCommodity = Commodity{
 // WAS err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", industry.Id, "Money").StructScan(&stock)
 func (industry Industry) MoneyStock() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].IndustryStockList)
+	stockList := *Users[username].IndustryStocks()
 	for i := 0; i < len(stockList); i++ {
 		s := stockList[i]
 		if (s.Industry_id == industry.Id) && (s.Usage_type == `Money`) {
@@ -90,7 +90,7 @@ func (industry Industry) MoneyStock() Industry_Stock {
 // WAS 	err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", industry.Id, "Sales").StructScan(&stock)
 func (industry Industry) SalesStock() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].IndustryStockList)
+	stockList := *Users[username].IndustryStocks()
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
 		if (s.Industry_id == industry.Id) && (s.Usage_type == `Sales`) {
@@ -105,7 +105,7 @@ func (industry Industry) SalesStock() Industry_Stock {
 // bit of a botch to use the name of the commodity as a search term
 func (industry Industry) VariableCapital() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].IndustryStockList)
+	stockList := *Users[username].IndustryStocks()
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
 		if (s.Industry_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Labour Power") {
@@ -125,7 +125,7 @@ func (industry Industry) OutputCommodity() *Commodity {
 // was 	query := `SELECT stocks.* FROM stocks INNER JOIN commodities ON stocks.commodity_id = commodities.id where stocks.owner_id = ? AND Usage_type ="Production" AND commodities.name="Means of Production"`
 func (industry Industry) ConstantCapital() Industry_Stock {
 	username := industry.UserName
-	stockList := (Users[username].IndustryStockList)
+	stockList := *Users[username].IndustryStocks()
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
 		if (s.Industry_id == industry.Id) && (s.Usage_type == `Production`) && (s.CommodityName() == "Means of Production") {
@@ -147,7 +147,7 @@ func (industry Industry) ConstantCapital() Industry_Stock {
 // was 	err = db.SDB.QueryRowx("SELECT * FROM stocks where Owner_Id = ? AND Usage_type =?", class.Id, "Sales").StructScan(&stock)
 func (class Class) MoneyStock() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].ClassStockList)
+	stockList := *Users[username].ClassStocks()
 
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
@@ -161,7 +161,7 @@ func (class Class) MoneyStock() Class_Stock {
 // returns the sales stock of the given class
 func (class Class) SalesStock() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].ClassStockList)
+	stockList := *Users[username].ClassStocks()
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
 		if (s.Class_id == class.Id) && (s.Usage_type == `Sales`) {
@@ -176,7 +176,7 @@ func (class Class) SalesStock() Class_Stock {
 // WAS 	query := `SELECT stocks.* FROM stocks INNER JOIN commodities ON stocks.commodity_id = commodities.id where stocks.owner_id = ? AND Usage_type ="Consumption" AND commodities.name="Consumption"`
 func (class Class) ConsumerGood() Class_Stock {
 	username := class.UserName
-	stockList := (Users[username].ClassStockList)
+	stockList := *Users[username].ClassStocks()
 
 	for i := 0; i < len(stockList); i++ {
 		s := &stockList[i]
@@ -192,7 +192,7 @@ func (class Class) ConsumerGood() Class_Stock {
 // fetches the name of the owner of this stock
 func (s Industry_Stock) OwnerName() string {
 	username := s.UserName
-	industryList := (Users[username].IndustryList)
+	industryList := *Users[username].Industries()
 	for i := 0; i < len(industryList); i++ {
 		ind := &industryList[i]
 		if s.Industry_id == ind.Id {
@@ -206,7 +206,7 @@ func (s Industry_Stock) OwnerName() string {
 // WAS 	rows, err := db.SDB.Queryx("SELECT * FROM commodities where Id = ?", i.Commodity_id)
 func (s Industry_Stock) CommodityName() string {
 	username := s.UserName
-	commodityList := (Users[username].CommodityList)
+	commodityList := *Users[username].Commodities()
 	for i := 0; i < len(commodityList); i++ {
 		c := commodityList[i]
 		if s.Commodity_id == c.Id {
@@ -220,7 +220,7 @@ func (s Industry_Stock) CommodityName() string {
 // WAS 	rows, err := db.SDB.Queryx("SELECT * FROM commodities where Id = ?", i.Commodity_id)
 func (s Industry_Stock) Commodity() *Commodity {
 	username := s.UserName
-	commodityList := (Users[username].CommodityList)
+	commodityList := *Users[username].Commodities()
 	for i := 0; i < len(commodityList); i++ {
 		c := commodityList[i]
 		if s.Commodity_id == c.Id {
@@ -253,7 +253,7 @@ func (s Simulation) Link() string {
 // fetches the industry that owns this industry stock
 // If it has none (an error, but we need to diagnose it) return nil.
 func (s Industry_Stock) Industry() *Industry {
-	industryList := (Users[s.UserName].IndustryList)
+	industryList := *Users[s.UserName].Industries()
 	for i := 0; i < len(industryList); i++ {
 		ind := &industryList[i]
 		if s.Industry_id == ind.Id {
@@ -278,7 +278,7 @@ func (s Industry_Stock) IndustryName() string {
 // fetches the class that owns this Class_stock
 // If it has none (an error, but we need to diagnose it) return nil.
 func (s Class_Stock) Class() *Class {
-	classList := (Users[s.UserName].ClassList)
+	classList := *Users[s.UserName].Classes()
 	for i := 0; i < len(classList); i++ {
 		ind := &classList[i]
 		if s.Class_id == ind.Id {
@@ -302,7 +302,7 @@ func (s Class_Stock) ClassName() string {
 // Return "UNKNOWN COMMODITY" if this is not found.
 func (s Class_Stock) CommodityName() string {
 	username := s.UserName
-	commodityList := (Users[username].CommodityList)
+	commodityList := *Users[username].Commodities()
 	for i := 0; i < len(commodityList); i++ {
 		c := commodityList[i]
 		if s.Commodity_id == c.Id {

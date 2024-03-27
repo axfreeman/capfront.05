@@ -7,10 +7,12 @@ import (
 	"capfront/api"
 	"capfront/auth"
 	"capfront/models"
+	"capfront/utils"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -44,11 +46,8 @@ func ActionHandler(ctx *gin.Context) {
 
 	// The action was taken. Now refresh from the server
 
-	if !api.Refresh(ctx, username) {
-		log.Output(1, "Warning: refresh was incomplete")
-		ctx.HTML(http.StatusOK, "errors.html", gin.H{
-			"message": "The action was done but we failed to retrieve all the data from the server",
-		})
+	if !api.FetchUserObjects(ctx, username) {
+		utils.DisplayError(ctx, "The server did not send back any data")
 	}
 
 	// TODO use the state information supplied by the server - this code duplicates the server's prerogative
@@ -89,29 +88,46 @@ func ActionHandler(ctx *gin.Context) {
 		fmt.Print("not redirecting")
 		ctx.Redirect(http.StatusMovedPermanently, "/index")
 	}
-	// //TODO set time stamp
-	// TODO why don't the log statements (or their println equivalents) produce any output?
+}
+
+type CloneResult struct {
+	Message       string `json:"message"`
+	Simulation_id int    `json:"simulation"`
 }
 
 // Creates a new simulation for the logged-in user, from the template specified by the 'id' parameter
 func CreateSimulation(ctx *gin.Context) {
 	username, _ := auth.Get_current_user(ctx)
-	template_id := ctx.Param("id")
-	body, _ := auth.ProtectedResourceServerRequest(username, " get user details ", `users/`+username)
-	jsonErr := json.Unmarshal(body, &models.UserServerItem)
-	auth.ProtectedResourceServerRequest(username, " create simulation ", `users/clone/`+template_id)
-	if jsonErr != nil {
-		log.Output(1, "Failed to obtain user details while creating a new simulation - cannot set current simulation right now")
-	} else {
-		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", models.UserServerItem.CurrentSimulation))
-		models.Users[username].CurrentSimulation = models.UserServerItem.CurrentSimulation
-	}
-	if !api.Refresh(ctx, username) {
-		log.Output(1, "Warning: refresh was incomplete")
-		ctx.HTML(http.StatusOK, "errors.html", gin.H{
-			"message": "Warning: we created this simulation but failed to retrieve all the data from the server",
-		})
+	t := ctx.Param("id")
+	id, _ := strconv.Atoi(t)
+	log.Output(1, fmt.Sprintf("Creating a simulation from template %d for user %s", id, username))
+
+	// Ask the server to create the clone and tell us the simulation id
+	var result CloneResult
+	body, err := auth.ProtectedResourceServerRequest(username, " create simulation ", `users/clone/`+t)
+	if err != nil {
+		utils.DisplayError(ctx, fmt.Sprintf("Failed to complete clone because of %v", err))
+		return
 	}
 
+	// read the simulation id
+	jsonErr := json.Unmarshal(body, &result)
+	if jsonErr != nil {
+		utils.DisplayError(ctx, fmt.Sprintf("Couldn't decode the simulation id because of this error:%v", jsonErr))
+		return
+	} else {
+		log.Output(1, fmt.Sprintf("Setting current simulation to be %d", result.Simulation_id))
+		models.Users[username].CurrentSimulation = result.Simulation_id
+	}
+
+	models.Users[username].Initialize() // Wipe past history and create a new history record
+
+	// Diagnostic - comment or uncomment as needed
+	// s, _ := json.MarshalIndent(models.Users[username], "  ", "  ")
+	// fmt.Printf("User record after creating the simulation is %s\n", string(s))
+
+	if !api.FetchUserObjects(ctx, username) {
+		utils.DisplayError(ctx, "Warning: we created this simulation but failed to retrieve all the data from the server")
+	}
 	ShowIndexPage(ctx)
 }
