@@ -44,7 +44,7 @@ func ActionHandler(ctx *gin.Context) {
 
 	// The action was taken. Now refresh from the server
 
-	if !api.Refresh(ctx, username) {
+	if !api.FetchUserObjects(ctx, username) {
 		log.Output(1, "Warning: refresh was incomplete")
 		ctx.HTML(http.StatusOK, "errors.html", gin.H{
 			"message": "The action was done but we failed to retrieve all the data from the server",
@@ -111,7 +111,7 @@ func CreateSimulation(ctx *gin.Context) {
 	userRecord := models.Users[username]
 	userRecord.ReInitialize()
 	userRecord.ViewedTimeStamp = 0
-	if !api.Refresh(ctx, username) {
+	if !api.FetchUserObjects(ctx, username) {
 		log.Output(1, "Warning: refresh was incomplete")
 		ctx.HTML(http.StatusOK, "errors.html", gin.H{
 			"message": "Warning: we created this simulation but failed to retrieve all the data from the server",

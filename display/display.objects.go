@@ -78,7 +78,7 @@ func userStatus(ctx *gin.Context) (string, bool, error) {
 			log.Printf("We are out of synch. Server thinks our simulation is %d and client says it is %d",
 				synched_user.CurrentSimulation,
 				models.Users[username].CurrentSimulation)
-			if !api.Refresh(ctx, username) {
+			if !api.FetchUserObjects(ctx, username) {
 				log.Printf("We don't have a token. Redirecting to login")
 				ctx.Redirect(http.StatusMovedPermanently, "/login")
 				return username, false, nil
@@ -378,7 +378,7 @@ func DeleteSimulation(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	log.Output(1, fmt.Sprintf("User %s wants to delete simulation %d", username, id))
 	auth.ProtectedResourceServerRequest(username, "Delete simulation", "simulations/delete/"+ctx.Param("id"))
-	api.Refresh(ctx, username)
+	api.FetchUserObjects(ctx, username)
 	UserDashboard(ctx)
 }
 

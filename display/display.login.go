@@ -106,7 +106,7 @@ func HandleLoginRequest(ctx *gin.Context) {
 	}
 
 	// Try to refresh from server
-	if !api.Refresh(ctx, username) {
+	if !api.FetchUserObjects(ctx, username) {
 		// we couldn't but that might be because we have no simulations
 		if userRecord.CurrentSimulation != 0 {
 			log.Output(1, fmt.Sprintf("Could not refresh user %s from the server\n", username))
