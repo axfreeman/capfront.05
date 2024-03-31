@@ -31,7 +31,8 @@ since their last login. Alternatively, the user should force resynchronise with 
 * LOGIN WITH BAD CREDENTIALS CREATES CRASH!!!!!!!!!!! (didn't do that before)
 * Remove silly confusion between client URL 'user/' and server URL 'users/'
 * Constructor function to initialize a new user
-* Login button on the error page
 * think about cookie expiry and refresh
+* 
 
-
+# Urgent
+* Peculiar bug has surfaced that each action button has to be pushed twice
