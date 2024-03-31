@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -114,14 +115,15 @@ func FetchAdminObjects() bool {
 // Returns true if all tables succeed.
 func FetchUserObjects(ctx *gin.Context, username string) bool {
 	// Uncomment for more detailed diagnostics
-	// _, file, no, ok := runtime.Caller(1)
-	// if ok {
-	// 	fmt.Printf("Fetch user objects was called from %s#%d\n", file, no)
-	// }
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" Fetch user objects was called from %s#%d\n", file, no)
+	}
 	for i := 0; i < len(ApiList); i++ {
 		a := ApiList[i]
+		fmt.Printf(" FetchUserObjects is fetching API item %d with name %s from URL %s\n", i, a.Name, a.ApiUrl)
 		if !FetchAPI(&a, username) {
-			fmt.Println("Cannot refresh from remote server; giving up")
+			fmt.Println("Cannot refresh from remote server; the user probably has no simulations. Do not continue ")
 			return false
 		}
 	}
@@ -137,14 +139,13 @@ func FetchAPI(item *ApiItem, username string) (result bool) {
 	// _, file, no, ok := runtime.Caller(1)
 	// if ok {
 	// 	fmt.Printf("fetch API was called from %s#%d\n", file, no)
+	// log.Output(1, fmt.Sprintf("User %s asked to fetch the table named %s from the URL %s\n", username, item.Name, item.ApiUrl))
 	// }
 
-	log.Output(1, fmt.Sprintf("User %s asked to fetch the table named %s from the URL %s\n", username, item.Name, item.ApiUrl))
-
 	body, _ := auth.ProtectedResourceServerRequest(username, "Fetch Table", item.ApiUrl)
-	// Check for an empty result. Not necessarily an error but useful to know.
+	// Check for an empty result. Not an error but tells us the user has no simulations yet.
 	if body[0] == 91 && body[1] == 93 {
-		log.Output(1, "INFORMATION: The server sent an empty table")
+		log.Output(1, "INFORMATION: The server sent an empty table; this means the user has no simulations yet.")
 	}
 
 	// Uncomment for a little more diagnostic information

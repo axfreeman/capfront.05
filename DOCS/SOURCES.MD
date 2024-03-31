@@ -49,4 +49,6 @@ I wanted a simple 'about' page to explain the project. This can be made more sop
 We use quite a few structures in which arrays are sub-nested. Space has to be reserved for these nested arrays explicitly, so they have to be initialised.  
 
 * https://www.delftstack.com/howto/go/create-an-empty-slice-in-go/  
-* 
+
+# Gin, middleware, and route handling
+* https://www.squash.io/exploring-advanced-features-of-gin-in-golang/

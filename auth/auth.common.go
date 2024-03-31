@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,8 @@ var URLheader string
 // TODO put these into an env file
 var SECRET_ADMIN_PASSWORD string = "insecure"
 
-var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
-// var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
+// var APISOURCE = `https://www.datapaedia.org/` // Comment for production version
+var APISOURCE = `http://127.0.0.1:8000/` // Alternate for local version
 
 //Force heroku update
 
@@ -47,17 +48,23 @@ func Get_current_user(ctx *gin.Context) (string, error) {
 //	description is a user-friendly name for the action being requested, which is used to produce error messages
 //	relativePath is appended to the URL of the remote server and tells the server what we want it to do
 func ProtectedResourceServerRequest(username string, description string, relativePath string) ([]byte, error) {
+	// Uncomment for more detailed diagnostics
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" ProtectedResourceServerRequest was called from %s#%d\n", file, no)
+	}
+
 	user, ok := models.Users[username]
 
 	if !ok {
-		return nil, fmt.Errorf("user %s is not in the local database: request will not be passed to the server", username)
+		return nil, fmt.Errorf(" User %s is not in the local database.\n Request will not be passed to the server; user will be asked to log in", username)
 	}
 
 	accessToken := user.Token
 	userMessage := models.UserMessage{StatusCode: http.StatusTeapot, Message: ""} // Couldn't resist it
 	user.UserMessage = &userMessage
 	url := APISOURCE + relativePath
-	log.Output(1, fmt.Sprintf("User %s asked URL %s for resource %s \n", username, relativePath, description))
+	log.Output(1, fmt.Sprintf("User %s wants the resource %s to supply the endpoint %s\n", username, relativePath, description))
 
 	body, _ := json.Marshal(models.RequestData{User: username}) // Wrap username in RequestData struct to prepare for unmarshal
 	resp, err := http.NewRequest("GET", url, bytes.NewBuffer(body))
@@ -86,10 +93,11 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	}
 
 	defer res.Body.Close()
-
 	b, _ := io.ReadAll(res.Body)
-
 	userMessage.StatusCode = http.StatusOK
+
+	// Uncomment for detailed diagnostics
+	fmt.Println(" Leaving ProtectedResourceServerRequest. Everything seems to have worked.")
 	// The content of the user message, if the action succeeds,
 	// should be set by the handler responsible for it.
 	return b, nil

@@ -18,7 +18,8 @@ import (
 func AdminDashboard(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		log.Output(1, fmt.Sprintf("Redirecting user %s away from the admin dashboard because of a bad login status", username))
+		utils.DisplayLogin(ctx, "You don't seem to be logged in")
 		return
 	}
 

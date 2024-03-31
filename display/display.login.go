@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -43,6 +44,12 @@ var userMessage string
 // The form specifies only one action, which is a submit button that POSTS the user name and password.
 // This POST is handled by `ClientLoginRequest`.
 func CaptureLoginRequest(ctx *gin.Context) {
+	// uncomment for detailed diagnostics
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" The login form was called from %s#%d\n", file, no)
+	}
+
 	ctx.HTML(http.StatusOK, "login.html", gin.H{
 		"message": userMessage,
 	})
@@ -192,7 +199,8 @@ func HandleRegisterRequest(ctx *gin.Context) {
 		utils.DisplayError(ctx, message)
 		return
 	}
-	ctx.Redirect(http.StatusMovedPermanently, "/login")
+	utils.DisplayLogin(ctx, "You can log in now ")
+
 }
 
 // Compose and send a request to the server to register.

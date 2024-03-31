@@ -33,7 +33,7 @@ since their last login. Alternatively, the user should force resynchronise with 
 * Constructor function to initialize a new user
 * think about cookie expiry and refresh
 * Boilerplate code in models.usermodels.go
-* 
+* Parameterise the templates to reduce boilerplate
 
 # Urgent
 * Peculiar bug has surfaced that each action button has to be pushed twice

@@ -39,7 +39,7 @@ func Initialise() {
 }
 
 func main() {
-	r := gin.Default()
+	r := gin.New()
 	r.LoadHTMLGlob("./templates/**/*") // load all the templates in the templates folder
 	fmt.Println("Welcome to capitalism")
 	r.GET("/action/:action", display.ActionHandler)

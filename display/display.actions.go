@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -33,7 +34,11 @@ type Action struct {
 // Having requested the action from ths server, sets 'state' to the next
 // stage of the circuit and redisplays whatever the user was looking at
 func ActionHandler(ctx *gin.Context) {
-	log.Output(1, "Entered actionHandler")
+	// Uncomment for more detailed diagnostics
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" ActionHandler was called from %s #%d\n", file, no)
+	}
 	var param Action
 	err := ctx.ShouldBindUri(&param)
 	if err != nil {
@@ -43,15 +48,24 @@ func ActionHandler(ctx *gin.Context) {
 	}
 	act := ctx.Param("action")
 	username, _ := auth.Get_current_user(ctx)
-	lastVisitedPage := models.Users[username].LastVisitedPage
-	log.Output(1, fmt.Sprintf("User %s wants the server to carry out the action %s\n", username, act))
-	log.Output(1, fmt.Sprintf("Last visited page %s", lastVisitedPage))
-	auth.ProtectedResourceServerRequest(username, act, `action/`+act)
+	userDatum, ok := models.Users[username]
+	if !ok {
+		// This can happen if, for example, the user goes for a coffee...
+		utils.DisplayError(ctx, "The server data has changed since you last visited. Please log in again")
+	}
+
+	lastVisitedPage := userDatum.LastVisitedPage
+	log.Output(1, fmt.Sprintf("User %s wants the server to implement action %s. The last visited page was %s\n", username, act, lastVisitedPage))
+
+	_, err = auth.ProtectedResourceServerRequest(username, act, `action/`+act)
+	if err != nil {
+		utils.DisplayError(ctx, "The server could not complete the action")
+	}
 
 	// The action was taken. Now refresh the data from the server
 	// TODO move the timestamp forward and create a new history item.
 	if !api.FetchUserObjects(ctx, username) {
-		utils.DisplayError(ctx, "The server completed the action but did not send back any data")
+		utils.DisplayError(ctx, "The server completed the action but did not send back any data.")
 	}
 
 	// TODO use the state information supplied by the server - this code duplicates the server's prerogative
@@ -86,10 +100,10 @@ func ActionHandler(ctx *gin.Context) {
 	log.Output(1, fmt.Sprintf("The last page this user visited was %v and this was split into%v", lastVisitedPage, visitedPageURL))
 	// v := visitedPageURL[0]
 	if lastVisitedPage == `/commodities` || lastVisitedPage == `/industries` || lastVisitedPage == `/classes` || lastVisitedPage == `/stocks` {
-		fmt.Print("redirection")
+		log.Output(1, fmt.Sprintf("User will be redirected to the last visited page which was %s\n", lastVisitedPage))
 		ctx.Redirect(http.StatusMovedPermanently, lastVisitedPage)
 	} else {
-		fmt.Print("not redirecting")
+		log.Output(1, "The user will be redirected to the Index Page, because the last visited URL was not a display page")
 		ctx.Redirect(http.StatusMovedPermanently, "/index")
 	}
 }

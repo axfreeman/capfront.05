@@ -7,27 +7,31 @@ import (
 	"capfront/api"
 	"capfront/auth"
 	"capfront/models"
+	"capfront/utils"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-// helper function for most display handlers
-// retrieves a user cookie using Get_current_user and extracts the login status
-// for convenience, returns the username, whether the user is logged in, and any error
-// sets 'LastVisitedPage' so we can return here after an action
+// Helper function for most display handlers. Checks with the server that the
+// user is logged in, so that the user's request can be handled.
+//
+// Retrieves a user cookie using Get_current_user and extracts the login status.
+// For convenience, returns the username, whether the user is logged in, and any error.
+// Sets 'LastVisitedPage' so we can return here after an action.
 func userStatus(ctx *gin.Context) (string, bool, error) {
 	var loginStatus bool = false
 
 	// Uncomment for more detailed diagnostics
-	// _, file, no, ok := runtime.Caller(1)
-	// if ok {
-	// 	fmt.Printf("userStatus was called from %s#%d\n", file, no)
-	// }
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" UserStatus was called from %s#%d\n", file, no)
+	}
 
 	// find out what the browser knows
 	username, err := auth.Get_current_user(ctx)
@@ -41,7 +45,7 @@ func userStatus(ctx *gin.Context) (string, bool, error) {
 	synched_user := models.NewUserDatum(username)
 	body, err := auth.ProtectedResourceServerRequest(username, "Synchronise with server", `users/`+username)
 	if err != nil {
-		log.Printf("Could not get user %s's details because:\n%v\n", username, err)
+		log.Printf("Could not get user %s's details because:%v\n", username, err)
 		return username, false, err
 	}
 
@@ -50,16 +54,14 @@ func userStatus(ctx *gin.Context) (string, bool, error) {
 	if err != nil {
 		// couldn't decode it
 		log.Printf("The server failed to inform us about user %s", username)
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "The server doesn't know you.")
 		return username, false, err
 	}
 
 	// Ask the server whether it accepts that the user is logged in
-	log.Printf("The server knows about user %s - ask if we are logged in", username)
-
 	if !synched_user.LoggedIn {
 		log.Printf("User %s is not logged in at the server", username)
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "The server thinks you are not logged in")
 		return username, false, err
 	}
 
@@ -74,7 +76,7 @@ func userStatus(ctx *gin.Context) (string, bool, error) {
 				models.Users[username].CurrentSimulation)
 			if !api.FetchUserObjects(ctx, username) {
 				log.Printf("We don't have a token. Redirecting to login")
-				ctx.Redirect(http.StatusMovedPermanently, "/login")
+				utils.DisplayLogin(ctx, "The server didn't give us enough informatiom to log you in")
 				return username, false, nil
 			}
 		}
@@ -136,7 +138,7 @@ func set_current_state(username string, new_state string) {
 func ShowCommodities(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 	state := get_current_state(username)
@@ -154,7 +156,7 @@ func ShowCommodities(ctx *gin.Context) {
 func ShowIndustries(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -172,7 +174,7 @@ func ShowIndustries(ctx *gin.Context) {
 func ShowClasses(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 	state := get_current_state(username)
@@ -189,7 +191,7 @@ func ShowClasses(ctx *gin.Context) {
 func ShowCommodity(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -217,7 +219,7 @@ func ShowCommodity(ctx *gin.Context) {
 func ShowIndustry(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -242,7 +244,7 @@ func ShowIndustry(ctx *gin.Context) {
 func ShowClass(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -265,11 +267,16 @@ func ShowClass(ctx *gin.Context) {
 }
 
 // Displays snapshot of the economy
-// TODO parameterise the templates to reduce boilerplate
+
 func ShowIndexPage(ctx *gin.Context) {
+	// Uncomment for more detailed diagnostics
+	_, file, no, ok := runtime.Caller(1)
+	if ok {
+		fmt.Printf(" ShowIndexPage was called from %s#%d\n", file, no)
+	}
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see the index page ")
 		return
 	}
 	state := get_current_state(username)
@@ -296,7 +303,7 @@ func ShowIndexPage(ctx *gin.Context) {
 func ShowTrace(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -323,12 +330,12 @@ func UserDashboard(ctx *gin.Context) {
 	// Uncomment for more detailed diagnostics
 	// _, file, no, ok := runtime.Caller(1)
 	// if ok {
-	// 	fmt.Printf("User Dashboard was called from %s#%d\n", file, no)
+	// 	fmt.Printf(" User Dashboard was called from %s#%d\n", file, no)
 	// }
 
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see the user dashboard ")
 		return
 	}
 
@@ -359,7 +366,7 @@ func DataHandler(ctx *gin.Context) {
 func SwitchSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to do this ")
 		return
 	}
 
@@ -373,7 +380,7 @@ func SwitchSimulation(ctx *gin.Context) {
 func DeleteSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to do this ")
 		return
 	}
 
@@ -387,7 +394,7 @@ func DeleteSimulation(ctx *gin.Context) {
 func RestartSimulation(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to do this ")
 		return
 	}
 
@@ -402,7 +409,7 @@ func RestartSimulation(ctx *gin.Context) {
 func ShowIndustryStocks(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
@@ -422,7 +429,7 @@ func ShowIndustryStocks(ctx *gin.Context) {
 func ShowClassStocks(ctx *gin.Context) {
 	username, loginStatus, _ := userStatus(ctx)
 	if !loginStatus {
-		ctx.Redirect(http.StatusMovedPermanently, "/login")
+		utils.DisplayLogin(ctx, "Please log in to see this ")
 		return
 	}
 
