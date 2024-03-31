@@ -94,11 +94,3 @@ func ProtectedResourceServerRequest(username string, description string, relativ
 	// should be set by the handler responsible for it.
 	return b, nil
 }
-
-// utility function to diagnose errors in the list of users
-func PrintUsers() {
-	fmt.Println("List of users and their contents")
-	for key, value := range models.Users {
-		fmt.Printf("%s\t:%v\n", key, value)
-	}
-}

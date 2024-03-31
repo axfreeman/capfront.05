@@ -65,14 +65,12 @@ func (u *UserDatum) Initialize() error {
 
 // Wrappers for the various lists
 // These all return nil if the user has no simulations as yet.
-// TODO a lot of boilerplate here but hard to remove
-// TODO because of the nil test problem.
-
-// Simulations is a special case, because the dashboard displays
-// a list of the user's simulations. But if the user has none
-// we have to make up a fake list with nothing in it, or the
-// app crashes when preparing the Template.
-// TODO there must be a better way.
+// A lot of boilerplate here but hard to remove because of the nil test problem.
+//
+// Simulations is a special case, because the dashboard displays a list
+// of the user's simulations. As a workaround, if the user has none we
+// make up a fake list with nothing in it, to ensure the app does not
+// crashes when displaying the dashboard.
 func (u UserDatum) Simulations() *[]Simulation {
 	if len(u.History) == 0 {
 		var fakeList []Simulation = make([]Simulation, 0)

@@ -32,6 +32,7 @@ since their last login. Alternatively, the user should force resynchronise with 
 * Remove silly confusion between client URL 'user/' and server URL 'users/'
 * Constructor function to initialize a new user
 * think about cookie expiry and refresh
+* Boilerplate code in models.usermodels.go
 * 
 
 # Urgent

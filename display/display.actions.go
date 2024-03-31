@@ -3,6 +3,9 @@
 
 package display
 
+// This module processes the actions that take the simulation through
+// a circuit - Demand, Supply, Trade, Produce, Consume, Invest
+
 import (
 	"capfront/api"
 	"capfront/auth"
@@ -18,7 +21,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// dispatches the action requested in the URL (eg /actions/trade will perform the trade action, etc)
+// Dispatches the action requested in the URL
+// Eg /actions/trade will perform the trade action, and so on.
 type Action struct {
 	A string `uri:"action"`
 }
@@ -33,21 +37,21 @@ func ActionHandler(ctx *gin.Context) {
 	var param Action
 	err := ctx.ShouldBindUri(&param)
 	if err != nil {
-		fmt.Println("Something went wrong", err)
+		fmt.Println("Malformed URL", err)
 		ctx.String(http.StatusBadRequest, "Malformed URL")
 		return
 	}
 	act := ctx.Param("action")
 	username, _ := auth.Get_current_user(ctx)
 	lastVisitedPage := models.Users[username].LastVisitedPage
-	log.Output(1, fmt.Sprintf("User %s wants the server to do %s\n", username, act))
+	log.Output(1, fmt.Sprintf("User %s wants the server to carry out the action %s\n", username, act))
 	log.Output(1, fmt.Sprintf("Last visited page %s", lastVisitedPage))
 	auth.ProtectedResourceServerRequest(username, act, `action/`+act)
 
-	// The action was taken. Now refresh from the server
-
+	// The action was taken. Now refresh the data from the server
+	// TODO move the timestamp forward and create a new history item.
 	if !api.FetchUserObjects(ctx, username) {
-		utils.DisplayError(ctx, "The server did not send back any data")
+		utils.DisplayError(ctx, "The server completed the action but did not send back any data")
 	}
 
 	// TODO use the state information supplied by the server - this code duplicates the server's prerogative
